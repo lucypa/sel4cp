@@ -11,7 +11,6 @@ uintptr_t shmem_vaddr;
 static void
 mycpy(char *dst, char *src, unsigned int length)
 {   
-
     int i = 0;
     while (i < length) {
         dst[i] = src[i];
@@ -22,19 +21,17 @@ mycpy(char *dst, char *src, unsigned int length)
 void
 init(void)
 {
-    //char *shello = "hello";
-    sel4cp_dbg_puts("starting...\n");
-
-    //mycpy((char*)shmem, shello, 5);
-
-    sel4cp_notify(0);
+    sel4cp_dbg_puts("starting\n");
 }
 
 void
 notified(sel4cp_channel ch)
 {
     sel4cp_dbg_puts("notified\n");
-    sel4cp_dbg_puts("goodbye");
+    sel4cp_dbg_puts("hello");
     //sel4cp_dbg_puts((char *)shmem);
     sel4cp_dbg_puts("\n");
+    //char *sbye = "goodbye";
+    //mycpy((char *)shmem, sbye, 7);
+    sel4cp_notify(0);
 }
