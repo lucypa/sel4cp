@@ -1,0 +1,881 @@
+# Kernel Boot Info
+
+    # of fixed caps     :       15
+    # of page table caps:        3
+    # of page caps      :        7
+    # of untyped objects:       66
+
+# Loader Regions
+
+       <Region name=PD-ELF eth-0 addr=0x4024b000 size=3000>
+       <Region name=PD-ELF eth-1 addr=0x4024c000 size=4256>
+
+# Monitor (Initial Task) Info
+
+     virtual memory : MemoryRegion(base=0x8a000000, end=0x8a007000)
+     physical memory: MemoryRegion(base=0x4024e000, end=0x40255000)
+
+# Allocated Kernel Objects Summary
+
+     # of allocated objects: 52
+
+# Bootstrap Kernel Invocations Summary
+
+     # of invocations   :         10
+     size of invocations:        688
+
+# System Kernel Invocations Summary
+
+     # of invocations   :        102
+     size of invocations:      7,096
+
+# Allocated Kernel Objects Detail
+
+    Page(2 MiB): MR=shared_dma #0                      11 cap_addr=8000000000000003 phys_addr=40400000
+    Page(4 KiB): IPC Buffer PD=eth                     10 cap_addr=8000000000000004 phys_addr=40003000
+    Page(4 KiB): MR=hw_ring_buffer #0                  10 cap_addr=8000000000000005 phys_addr=40004000
+    Page(4 KiB): MR=eth_clk @ 30380000                 10 cap_addr=8000000000000009 phys_addr=30380000
+    Page(4 KiB): MR=eth_clk @ 30381000                 10 cap_addr=800000000000000a phys_addr=30381000
+    Page(4 KiB): MR=eth_clk @ 30382000                 10 cap_addr=800000000000000b phys_addr=30382000
+    Page(4 KiB): MR=eth_clk @ 30383000                 10 cap_addr=800000000000000c phys_addr=30383000
+    Page(4 KiB): MR=eth_clk @ 30384000                 10 cap_addr=800000000000000d phys_addr=30384000
+    Page(4 KiB): MR=eth_clk @ 30385000                 10 cap_addr=800000000000000e phys_addr=30385000
+    Page(4 KiB): MR=eth_clk @ 30386000                 10 cap_addr=800000000000000f phys_addr=30386000
+    Page(4 KiB): MR=eth_clk @ 30387000                 10 cap_addr=8000000000000010 phys_addr=30387000
+    Page(4 KiB): MR=eth_clk @ 30388000                 10 cap_addr=8000000000000011 phys_addr=30388000
+    Page(4 KiB): MR=eth_clk @ 30389000                 10 cap_addr=8000000000000012 phys_addr=30389000
+    Page(4 KiB): MR=eth_clk @ 3038a000                 10 cap_addr=8000000000000013 phys_addr=3038a000
+    Page(4 KiB): MR=eth_clk @ 3038b000                 10 cap_addr=8000000000000014 phys_addr=3038b000
+    Page(4 KiB): MR=eth_clk @ 3038c000                 10 cap_addr=8000000000000015 phys_addr=3038c000
+    Page(4 KiB): MR=eth_clk @ 3038d000                 10 cap_addr=8000000000000016 phys_addr=3038d000
+    Page(4 KiB): MR=eth_clk @ 3038e000                 10 cap_addr=8000000000000017 phys_addr=3038e000
+    Page(4 KiB): MR=eth_clk @ 3038f000                 10 cap_addr=8000000000000018 phys_addr=3038f000
+    Page(4 KiB): MR=eth0 @ 30be0000                    10 cap_addr=8000000000000022 phys_addr=30be0000
+    Page(4 KiB): MR=eth0 @ 30be1000                    10 cap_addr=8000000000000023 phys_addr=30be1000
+    Page(4 KiB): MR=eth0 @ 30be2000                    10 cap_addr=8000000000000024 phys_addr=30be2000
+    Page(4 KiB): MR=eth0 @ 30be3000                    10 cap_addr=8000000000000025 phys_addr=30be3000
+    Page(4 KiB): MR=eth0 @ 30be4000                    10 cap_addr=8000000000000026 phys_addr=30be4000
+    Page(4 KiB): MR=eth0 @ 30be5000                    10 cap_addr=8000000000000027 phys_addr=30be5000
+    Page(4 KiB): MR=eth0 @ 30be6000                    10 cap_addr=8000000000000028 phys_addr=30be6000
+    Page(4 KiB): MR=eth0 @ 30be7000                    10 cap_addr=8000000000000029 phys_addr=30be7000
+    Page(4 KiB): MR=eth0 @ 30be8000                    10 cap_addr=800000000000002a phys_addr=30be8000
+    Page(4 KiB): MR=eth0 @ 30be9000                    10 cap_addr=800000000000002b phys_addr=30be9000
+    Page(4 KiB): MR=eth0 @ 30bea000                    10 cap_addr=800000000000002c phys_addr=30bea000
+    Page(4 KiB): MR=eth0 @ 30beb000                    10 cap_addr=800000000000002d phys_addr=30beb000
+    Page(4 KiB): MR=eth0 @ 30bec000                    10 cap_addr=800000000000002e phys_addr=30bec000
+    Page(4 KiB): MR=eth0 @ 30bed000                    10 cap_addr=800000000000002f phys_addr=30bed000
+    Page(4 KiB): MR=eth0 @ 30bee000                    10 cap_addr=8000000000000030 phys_addr=30bee000
+    Page(4 KiB): MR=eth0 @ 30bef000                    10 cap_addr=8000000000000031 phys_addr=30bef000
+    Page(4 KiB): MR=ELF:eth-0 @ 4024b000               10 cap_addr=8000000000000032 phys_addr=4024b000
+    Page(4 KiB): MR=ELF:eth-1 @ 4024c000               10 cap_addr=8000000000000033 phys_addr=4024c000
+    Page(4 KiB): MR=ELF:eth-1 @ 4024d000               10 cap_addr=8000000000000034 phys_addr=4024d000
+    TCB: PD=eth                                        1 cap_addr=8000000000000035 phys_addr=40005000
+    SchedContext: PD=eth                               5 cap_addr=8000000000000036 phys_addr=40006000
+    Reply: Monitor                                     6 cap_addr=8000000000000037 phys_addr=40008000
+    Reply: PD=eth                                      6 cap_addr=8000000000000038 phys_addr=40008020
+    EP: Monitor Fault                                  2 cap_addr=8000000000000039 phys_addr=40008040
+    Notification: PD=eth                               3 cap_addr=800000000000003a phys_addr=40008080
+    VSpace: PD=eth                                     9 cap_addr=800000000000003b phys_addr=40009000
+    PageUpperDirectory: PD=eth VADDR=0x0               8 cap_addr=800000000000003c phys_addr=4000a000
+    PageDirectory: PD=eth VADDR=0x0                    13 cap_addr=800000000000003d phys_addr=4000b000
+    PageTable: PD=eth VADDR=0x200000                   12 cap_addr=800000000000003e phys_addr=4000c000
+    PageTable: PD=eth VADDR=0x2000000                  12 cap_addr=800000000000003f phys_addr=4000d000
+    PageTable: PD=eth VADDR=0x2200000                  12 cap_addr=8000000000000040 phys_addr=4000e000
+    PageTable: PD=eth VADDR=0x3000000                  12 cap_addr=8000000000000041 phys_addr=4000f000
+    CNode: PD=eth                                      4 cap_addr=8000000000000042 phys_addr=40256000
+
+# Bootstrap Kernel Invocations Detail
+
+    0x0000 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          4 (SEL4_CNODE_OBJECT - variable size)
+         size_bits            1 (0x2)
+         root (cap)           0x0000000000000002 (CNode: init)
+         node_index           0
+         node_depth           0
+         node_offset          92
+         num_objects          1
+    0x0001 CNode                - Mint              - 0x000000000000005c (CNode: root)
+         dest_index           0
+         dest_depth           1
+         src_root (cap)       0x0000000000000002 (CNode: init)
+         src_obj (cap)        0x0000000000000002 (CNode: init)
+         src_depth            64
+         rights               15
+         badge                51
+    0x0002 TCB                  - SetSpace          - 0x0000000000000001 (TCB: init)
+         fault_ep (cap)       0x0000000000000000 (null)
+         cspace_root (cap)    0x000000000000005c (CNode: root)
+         cspace_root_data     0
+         vspace_root (cap)    0x0000000000000003 (VSpace: init)
+         vspace_root_data     0
+    0x0003 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          4 (SEL4_CNODE_OBJECT - variable size)
+         size_bits            7 (0x80)
+         root (cap)           0x0000000000000002 (CNode: init)
+         node_index           0
+         node_depth           0
+         node_offset          93
+         num_objects          1
+    0x0004 CNode                - Mint              - 0x000000000000005c (CNode: root)
+         dest_index           1
+         dest_depth           1
+         src_root (cap)       0x0000000000000002 (CNode: init)
+         src_obj (cap)        0x000000000000005d (CNode: system)
+         src_depth            64
+         rights               15
+         badge                56
+    0x0005 Untyped              - Retype            - 0x000000000000001a (Untyped @ 0x40249000:0x1000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          0
+         num_objects          1
+    0x0006 Untyped              - Retype            - 0x000000000000001b (Untyped @ 0x4024a000:0x2000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          1
+         num_objects          1
+    0x0007 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          12 (SEL4_PAGE_TABLE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          2
+         num_objects          1
+    0x0008 Page Table           - Map               - 0x8000000000000002 (PageTable: monitor)
+         vspace (cap)         0x0000000000000003 (VSpace: init)
+         vaddr                0x80000000
+         attr                 3
+    0x0009 Page                 - Map               - 0x8000000000000000 (SmallPage: monitor invocation table)
+         vspace (cap)         0x0000000000000003 (VSpace: init)
+         vaddr                0x80000000
+         attr                 2
+         rights               7
+      REPEAT: count=2 {'page': 1, 'vaddr': 4096}
+
+# System Kernel Invocations Detail
+
+    0x0000 Untyped              - Retype            - 0x000000000000003b (Untyped @ 0x40400000:0x400000)
+         object_type          11 (SEL4_LARGE_PAGE_OBJECT - 0x200000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          3
+         num_objects          1
+    0x0001 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          4
+         num_objects          2
+    0x0002 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            21 (0x200000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          6
+         num_objects          1
+    0x0003 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            20 (0x100000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          7
+         num_objects          1
+    0x0004 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            19 (0x80000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          8
+         num_objects          1
+    0x0005 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          9
+         num_objects          1
+    0x0006 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          10
+         num_objects          1
+    0x0007 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          11
+         num_objects          1
+    0x0008 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          12
+         num_objects          1
+    0x0009 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          13
+         num_objects          1
+    0x000a Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          14
+         num_objects          1
+    0x000b Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          15
+         num_objects          1
+    0x000c Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          16
+         num_objects          1
+    0x000d Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          17
+         num_objects          1
+    0x000e Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          18
+         num_objects          1
+    0x000f Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          19
+         num_objects          1
+    0x0010 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          20
+         num_objects          1
+    0x0011 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          21
+         num_objects          1
+    0x0012 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          22
+         num_objects          1
+    0x0013 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          23
+         num_objects          1
+    0x0014 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          24
+         num_objects          1
+    0x0015 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            16 (0x10000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          25
+         num_objects          1
+    0x0016 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            17 (0x20000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          26
+         num_objects          1
+    0x0017 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            18 (0x40000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          27
+         num_objects          1
+    0x0018 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            22 (0x400000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          28
+         num_objects          1
+    0x0019 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            21 (0x200000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          29
+         num_objects          1
+    0x001a Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            20 (0x100000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          30
+         num_objects          1
+    0x001b Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            19 (0x80000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          31
+         num_objects          1
+    0x001c Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            18 (0x40000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          32
+         num_objects          1
+    0x001d Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          0 (SEL4_UNTYPED_OBJECT - variable size)
+         size_bits            17 (0x20000)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          33
+         num_objects          1
+    0x001e Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          34
+         num_objects          1
+    0x001f Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          35
+         num_objects          1
+    0x0020 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          36
+         num_objects          1
+    0x0021 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          37
+         num_objects          1
+    0x0022 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          38
+         num_objects          1
+    0x0023 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          39
+         num_objects          1
+    0x0024 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          40
+         num_objects          1
+    0x0025 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          41
+         num_objects          1
+    0x0026 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          42
+         num_objects          1
+    0x0027 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          43
+         num_objects          1
+    0x0028 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          44
+         num_objects          1
+    0x0029 Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          45
+         num_objects          1
+    0x002a Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          46
+         num_objects          1
+    0x002b Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          47
+         num_objects          1
+    0x002c Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          48
+         num_objects          1
+    0x002d Untyped              - Retype            - 0x000000000000001f (Untyped @ 0x30000000:0x8000000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          49
+         num_objects          1
+    0x002e Untyped              - Retype            - 0x000000000000001b (Untyped @ 0x4024a000:0x2000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          50
+         num_objects          1
+    0x002f Untyped              - Retype            - 0x000000000000001c (Untyped @ 0x4024c000:0x2000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          51
+         num_objects          1
+    0x0030 Untyped              - Retype            - 0x000000000000001c (Untyped @ 0x4024c000:0x2000 (device))
+         object_type          10 (SEL4_SMALL_PAGE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          52
+         num_objects          1
+    0x0031 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          1 (SEL4_TCB_OBJECT - 0x800)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          53
+         num_objects          1
+    0x0032 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          5 (SEL4_SCHEDCONTEXT_OBJECT - variable size)
+         size_bits            8 (0x100)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          54
+         num_objects          1
+    0x0033 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          6 (SEL4_REPLY_OBJECT - 0x20)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          55
+         num_objects          2
+    0x0034 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          2 (SEL4_ENDPOINT_OBJECT - 0x10)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          57
+         num_objects          1
+    0x0035 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          3 (SEL4_NOTIFICATION_OBJECT - 0x40)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          58
+         num_objects          1
+    0x0036 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          9 (SEL4_PAGE_GLOBAL_DIRECTORY_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          59
+         num_objects          1
+    0x0037 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          8 (SEL4_PAGE_UPPER_DIRECTORY_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          60
+         num_objects          1
+    0x0038 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          13 (SEL4_PAGE_DIRECTORY_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          61
+         num_objects          1
+    0x0039 Untyped              - Retype            - 0x0000000000000034 (Untyped @ 0x40000000:0x10000)
+         object_type          12 (SEL4_PAGE_TABLE_OBJECT - 0x1000)
+         size_bits            0 (N/A)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          62
+         num_objects          4
+    0x003a Untyped              - Retype            - 0x0000000000000036 (Untyped @ 0x40256000:0x2000)
+         object_type          4 (SEL4_CNODE_OBJECT - variable size)
+         size_bits            8 (0x100)
+         root (cap)           0x000000000000005c (CNode: root)
+         node_index           1
+         node_depth           1
+         node_offset          66
+         num_objects          1
+    0x003b IRQ Control          - Get               - 0x0000000000000004 (IRQ Control)
+         irq                  118
+         dest_root (cap)      0x000000000000005c (CNode: root)
+         dest_index           9223372036854775875
+         dest_depth           64
+    0x003c IRQ Control          - Get               - 0x0000000000000004 (IRQ Control)
+         irq                  119
+         dest_root (cap)      0x000000000000005c (CNode: root)
+         dest_index           9223372036854775876
+         dest_depth           64
+    0x003d IRQ Control          - Get               - 0x0000000000000004 (IRQ Control)
+         irq                  120
+         dest_root (cap)      0x000000000000005c (CNode: root)
+         dest_index           9223372036854775877
+         dest_depth           64
+    0x003e ASID Pool            - Assign            - 0x0000000000000006 (ASID Pool: init)
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+    0x003f CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           70
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000022 (Page(4 KiB): MR=eth0 @ 30be0000)
+         src_depth            64
+         rights               3
+         badge                0
+      REPEAT: count=16 {'dest_index': 1, 'src_obj': 1}
+    0x0040 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           86
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000009 (Page(4 KiB): MR=eth_clk @ 30380000)
+         src_depth            64
+         rights               3
+         badge                0
+      REPEAT: count=16 {'dest_index': 1, 'src_obj': 1}
+    0x0041 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           102
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000005 (Page(4 KiB): MR=hw_ring_buffer #0)
+         src_depth            64
+         rights               3
+         badge                0
+    0x0042 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           103
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000003 (Page(2 MiB): MR=shared_dma #0)
+         src_depth            64
+         rights               3
+         badge                0
+    0x0043 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           104
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000032 (Page(4 KiB): MR=ELF:eth-0 @ 4024b000)
+         src_depth            64
+         rights               2
+         badge                0
+    0x0044 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           105
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000033 (Page(4 KiB): MR=ELF:eth-1 @ 4024c000)
+         src_depth            64
+         rights               3
+         badge                0
+      REPEAT: count=2 {'dest_index': 1, 'src_obj': 1}
+    0x0045 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           107
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x800000000000003a (Notification: PD=eth)
+         src_depth            64
+         rights               15
+         badge                8
+    0x0046 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           108
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x800000000000003a (Notification: PD=eth)
+         src_depth            64
+         rights               15
+         badge                16
+    0x0047 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           109
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x800000000000003a (Notification: PD=eth)
+         src_depth            64
+         rights               15
+         badge                32
+    0x0048 CNode                - Mint              - 0x000000000000005d (CNode: system)
+         dest_index           110
+         dest_depth           7
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000039 (EP: Monitor Fault)
+         src_depth            64
+         rights               15
+         badge                1
+    0x0049 CNode                - Mint              - 0x8000000000000042 (CNode: PD=eth)
+         dest_index           1
+         dest_depth           8
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x800000000000003a (Notification: PD=eth)
+         src_depth            64
+         rights               15
+         badge                0
+    0x004a CNode                - Mint              - 0x8000000000000042 (CNode: PD=eth)
+         dest_index           4
+         dest_depth           8
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000038 (Reply: PD=eth)
+         src_depth            64
+         rights               15
+         badge                1
+    0x004b CNode                - Mint              - 0x8000000000000042 (CNode: PD=eth)
+         dest_index           3
+         dest_depth           8
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x800000000000003b (VSpace: PD=eth)
+         src_depth            64
+         rights               15
+         badge                0
+    0x004c CNode                - Mint              - 0x8000000000000042 (CNode: PD=eth)
+         dest_index           141
+         dest_depth           8
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000043 (IRQ Handler: irq=118)
+         src_depth            64
+         rights               15
+         badge                0
+    0x004d CNode                - Mint              - 0x8000000000000042 (CNode: PD=eth)
+         dest_index           142
+         dest_depth           8
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000044 (IRQ Handler: irq=119)
+         src_depth            64
+         rights               15
+         badge                0
+    0x004e CNode                - Mint              - 0x8000000000000042 (CNode: PD=eth)
+         dest_index           143
+         dest_depth           8
+         src_root (cap)       0x000000000000005c (CNode: root)
+         src_obj (cap)        0x8000000000000045 (IRQ Handler: irq=120)
+         src_depth            64
+         rights               15
+         badge                0
+    0x004f IRQ Handler          - SetNotification   - 0x8000000000000043 (IRQ Handler: irq=118)
+         notification (cap)   0x800000000000006b (Notification: PD=eth (badge=0x8))
+    0x0050 IRQ Handler          - SetNotification   - 0x8000000000000044 (IRQ Handler: irq=119)
+         notification (cap)   0x800000000000006c (Notification: PD=eth (badge=0x10))
+    0x0051 IRQ Handler          - SetNotification   - 0x8000000000000045 (IRQ Handler: irq=120)
+         notification (cap)   0x800000000000006d (Notification: PD=eth (badge=0x20))
+    0x0052 Page Upper Directory - Map               - 0x800000000000003c (PageUpperDirectory: PD=eth VADDR=0x0)
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x0
+         attr                 3
+    0x0053 Page Directory       - Map               - 0x800000000000003d (PageDirectory: PD=eth VADDR=0x0)
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x0
+         attr                 3
+    0x0054 Page Table           - Map               - 0x800000000000003e (PageTable: PD=eth VADDR=0x200000)
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x200000
+         attr                 3
+    0x0055 Page Table           - Map               - 0x800000000000003f (PageTable: PD=eth VADDR=0x2000000)
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x2000000
+         attr                 3
+    0x0056 Page Table           - Map               - 0x8000000000000040 (PageTable: PD=eth VADDR=0x2200000)
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x2200000
+         attr                 3
+    0x0057 Page Table           - Map               - 0x8000000000000041 (PageTable: PD=eth VADDR=0x3000000)
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x3000000
+         attr                 3
+    0x0058 Page                 - Map               - 0x8000000000000046 (Page(4 KiB): MR=eth0 @ 30be0000 (derived))
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x2000000
+         attr                 3
+         rights               6
+      REPEAT: count=16 {'page': 1, 'vaddr': 4096}
+    0x0059 Page                 - Map               - 0x8000000000000056 (Page(4 KiB): MR=eth_clk @ 30380000 (derived))
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x2200000
+         attr                 3
+         rights               6
+      REPEAT: count=16 {'page': 1, 'vaddr': 4096}
+    0x005a Page                 - Map               - 0x8000000000000066 (Page(4 KiB): MR=hw_ring_buffer #0 (derived))
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x3000000
+         attr                 3
+         rights               6
+    0x005b Page                 - Map               - 0x8000000000000067 (Page(2 MiB): MR=shared_dma #0 (derived))
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x2400000
+         attr                 3
+         rights               7
+    0x005c Page                 - Map               - 0x8000000000000068 (Page(4 KiB): MR=ELF:eth-0 @ 4024b000 (derived))
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x200000
+         attr                 2
+         rights               3
+    0x005d Page                 - Map               - 0x8000000000000069 (Page(4 KiB): MR=ELF:eth-1 @ 4024c000 (derived))
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x201000
+         attr                 3
+         rights               7
+      REPEAT: count=2 {'page': 1, 'vaddr': 4096}
+    0x005e Page                 - Map               - 0x8000000000000004 (Page(4 KiB): IPC Buffer PD=eth)
+         vspace (cap)         0x800000000000003b (VSpace: PD=eth)
+         vaddr                0x203000
+         attr                 3
+         rights               7
+    0x005f SchedControl         - ConfigureFlags    - 0x0000000000000012 (None)
+         schedcontext (cap)   0x8000000000000036 (SchedContext: PD=eth)
+         budget               1000
+         period               100000
+         extra_refills        0
+         badge                256
+         flags                0
+    0x0060 TCB                  - SetSchedParams    - 0x8000000000000035 (TCB: PD=eth)
+         authority (cap)      0x0000000000000001 (TCB: init)
+         mcp                  254
+         priority             254
+         sched_context (cap)  0x8000000000000036 (SchedContext: PD=eth)
+         fault_ep (cap)       0x8000000000000039 (EP: Monitor Fault)
+    0x0061 TCB                  - SetSpace          - 0x8000000000000035 (TCB: PD=eth)
+         fault_ep (cap)       0x800000000000006e (None)
+         cspace_root (cap)    0x8000000000000042 (CNode: PD=eth)
+         cspace_root_data     56
+         vspace_root (cap)    0x800000000000003b (VSpace: PD=eth)
+         vspace_root_data     0
+    0x0062 TCB                  - SetIPCBuffer      - 0x8000000000000035 (TCB: PD=eth)
+         buffer               2109440
+         buffer_frame (cap)   0x8000000000000004 (Page(4 KiB): IPC Buffer PD=eth)
+    0x0063 TCB                  - WriteRegisters    - 0x8000000000000035 (TCB: PD=eth)
+         resume               False
+         arch_flags           0
+         regs                 <sel4coreplat.sel4.Sel4Aarch64Regs object at 0x40065dbb80>
+    0x0064 TCB                  - BindNotification  - 0x8000000000000035 (TCB: PD=eth)
+         notification (cap)   0x800000000000003a (Notification: PD=eth)
+    0x0065 TCB                  - Resume            - 0x8000000000000035 (TCB: PD=eth)
+
