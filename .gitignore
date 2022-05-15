@@ -5,4 +5,4 @@ env/
 pyenv/
 release/
 tmp_build/
-
+*.o
