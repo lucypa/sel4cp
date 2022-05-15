@@ -35,7 +35,15 @@
 
 #define RXD_EMPTY       (1UL << 15)
 #define WRAP            (1UL << 13)
+#define TXD_READY       (1UL << 15)
+#define TXD_ADDCRC      (1UL << 10)
+#define TXD_LAST        (1UL << 11)
+
+
 #define RDAR_RDAR       (1UL << 24) /* RX descriptor active */
+#define TDAR_TDAR       (1UL << 24) /* TX descriptor active */
+
+
 
 #define RCR_MAX_FL(x) (((x) & 0x3fff) << 16) /* Maximum Frame Length */
 

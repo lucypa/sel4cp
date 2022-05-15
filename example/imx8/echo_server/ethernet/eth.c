@@ -1,6 +1,5 @@
 /*
- * Copyright 2021, Breakaway Consulting Pty. Ltd.
- *
+ * Copyright 2022, UNSW
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
@@ -8,43 +7,59 @@
 #include <stdint.h>
 #include <sel4cp.h>
 #include "eth.h"
+#include "shared_ringbuffer.h"
 
-#define OUTPUT_CH 1
-#define INPUT_CH 2
-#define IRQ_CH 3
+#define IRQ_CH 1
+#define TX_CH  2
+#define RX_CH  2
 
 #define CCM_VADDR   0x2200000
 #define MDC_FREQ    20000000UL
 
+/* Memory regions. These all have to be here to keep compiler happy */
 uintptr_t hw_ring_buffer_vaddr;
 uintptr_t hw_ring_buffer_paddr;
-
-uintptr_t packet_buffer_vaddr;
-uintptr_t packet_buffer_paddr;
+uintptr_t shared_dma_vaddr;
+uintptr_t shared_dma_paddr;
+uintptr_t rx_cookies;
+uintptr_t tx_cookies;
+uintptr_t rx_avail;
+uintptr_t rx_used;
+uintptr_t tx_avail;
+uintptr_t tx_used;
 
 /* Make the minimum frame buffer 2k. This is a bit of a waste of memory, but ensure alignment */
 #define PACKET_BUFFER_SIZE (2 * 1024)
 #define MAX_PACKET_SIZE     1536
 
-#define RBD_COUNT 128
-#define TBD_COUNT 128
+#define RX_COUNT 128
+#define TX_COUNT 128
 
-struct rbd {
-    uint16_t data_length;
-    uint16_t flags;
+struct descriptor {
+    uint16_t len;
+    uint16_t stat;
     uint32_t addr;
 };
 
-struct tbd {
-    uint16_t data_length;
-    uint16_t flags;
-    uint32_t addr;
-};
+typedef struct {
+    unsigned int cnt;
+    unsigned int remain;
+    unsigned int tail;
+    unsigned int head;
+    volatile struct descriptor *descr;
+    uintptr_t phys;
+    void **cookies;
+} ring_ctx_t;
+
+ring_ctx_t rx;
+ring_ctx_t tx;
+unsigned int tx_lengths[TX_COUNT];
+
+/* Pointers to shared_ringbuffers */
+ring_handle_t rx_ring;
+ring_handle_t tx_ring;
 
 static uint8_t mac[6];
-
-static unsigned rbd_index = 0;
-//static unsigned tbd_index = 0;
 
 volatile struct enet_regs *eth = (void *)(uintptr_t)0x2000000;
 
@@ -57,39 +72,11 @@ volatile uint32_t *enet_axi_target = (void *)(uintptr_t)CCM_VADDR + 0x8880;
 volatile uint32_t *enet_ref_target = (void *)(uintptr_t)CCM_VADDR + 0xa980;
 volatile uint32_t *enet_timer_target = (void *)(uintptr_t)CCM_VADDR + 0xaa00;
 
-volatile struct rbd *rbd;
-volatile struct tbd *tbd;
 
 static char
 hexchar(unsigned int v)
 {
     return v < 10 ? '0' + v : ('a' - 10) + v;
-}
-
-static void
-dump_reg(const char *name, uint32_t val)
-{
-
-    char buffer[8 + 3 + 1];
-    buffer[0] = '0';
-    buffer[1] = 'x';
-    buffer[8 + 3 - 1] = 0;
-    for (unsigned i = 8 + 1 + 1; i > 1; i--) {
-        if (i == 6) {
-            buffer[i] = '_';
-        } else {
-            buffer[i] = hexchar(val & 0xf);
-            val >>= 4;
-        }
-    }
-    sel4cp_dbg_puts(name);
-    // unsigned int l = 10 - slen(name);
-    // for (unsigned i = 0; i < l; i++) {
-    //     sel4cp_dbg_putc(' ');
-    // }
-    sel4cp_dbg_puts(": ");
-    sel4cp_dbg_puts(buffer);
-    sel4cp_dbg_puts("\n");
 }
 
 static void
@@ -150,37 +137,250 @@ dump_mac(uint8_t *mac)
     }
 }
 
-static void
-handle_rx(sel4cp_channel ch, volatile struct enet_regs *eth)
+static uintptr_t 
+getPhysAddr(uintptr_t virtual)
 {
-    uint16_t flags;
+    uint64_t offset = virtual - shared_dma_vaddr;
+    uintptr_t phys;
 
-    for (;;) {
-        flags = rbd[rbd_index].flags;
-        //uint32_t packet_length = rbd[rbd_index].data_length;
+    if (offset < 0) {
+        sel4cp_dbg_puts("getPhysAddr: offset < 0");
+        return 0;
+    }
 
-        if ((flags & RXD_EMPTY)) {
-            /* buffer is empty, can stop */
+    phys = shared_dma_paddr + offset;
+    puthex64(phys);
+    return phys;
+}
+
+static void update_ring_slot(
+    ring_ctx_t *ring,
+    unsigned int idx,
+    uintptr_t phys,
+    uint16_t len,
+    uint16_t stat)
+{
+    volatile struct descriptor *d = &(ring->descr[idx]);
+    d->addr = phys;
+    d->len = len;
+
+    /* Ensure all writes to the descriptor complete, before we set the flags
+     * that makes hardware aware of this slot.
+     */
+    __sync_synchronize();
+
+    d->stat = stat;
+}
+
+static uintptr_t 
+alloc_rx_buf(size_t buf_size, void **cookie)
+{
+    uintptr_t addr;
+    unsigned int len;
+
+    /* Try to grab a buffer from the available ring */
+    if (driver_dequeue(rx_ring.avail_ring, &addr, &len, cookie)) {
+        sel4cp_dbg_puts("RX Available ring is empty. No more buffers available");
+        return 0;
+    }
+
+    /* Invalidate the memory */
+    // Addr is a virtual address.
+    seL4_ARM_VSpace_Invalidate_Data(3, addr, addr + buf_size);
+
+    return getPhysAddr(addr);
+}
+
+static void fill_rx_bufs()
+{
+    ring_ctx_t *ring = &rx;
+    __sync_synchronize();
+    while (ring->remain > 0) {
+        /* request a buffer */
+        void *cookie = NULL;
+        // TODO CHANGE THIS. 
+        uintptr_t phys = alloc_rx_buf(MAX_PACKET_SIZE, &cookie);
+        if (!phys) {
             break;
         }
-            
-        /* make it available */
-        flags = RXD_EMPTY;
-        if (rbd_index == RBD_COUNT - 1) {
-            flags |= WRAP;
+        uint16_t stat = RXD_EMPTY;
+        int idx = ring->tail;
+        int new_tail = idx + 1;
+        if (new_tail == ring->cnt) {
+            new_tail = 0;
+            stat |= WRAP;
         }
-        rbd[rbd_index].flags = flags;
+        ring->cookies[idx] = cookie;
+        update_ring_slot(ring, idx, phys, 0, stat);
+        ring->tail = new_tail;
+        /* There is a race condition if add/remove is not synchronized. */
+        ring->remain--;
+    }
+    __sync_synchronize();
 
-        rbd_index++;
-        if (rbd_index == RBD_COUNT) {
-            rbd_index = 0;
+    if (ring->tail != ring->head) {
+        /* Make sure rx is enabled */
+        eth->rdar = RDAR_RDAR;
+    }
+}
+
+static void
+handle_rx(volatile struct enet_regs *eth)
+{
+    ring_ctx_t *ring = &rx;
+    unsigned int head = ring->head;
+
+    while (head != ring->tail) {
+        volatile struct descriptor *d = &(ring->descr[head]);
+
+        /* If the slot is still marked as empty we are done. */
+        if (d->stat & RXD_EMPTY) {
+            break;
+        }
+
+        void *cookie = ring->cookies[head];
+        /* Go to next buffer, handle roll-over. */
+        if (++head == ring->cnt) {
+            head = 0;
+        }
+        ring->head = head;
+
+        /* There is a race condition here if add/remove is not synchronized. */
+        ring->remain++;
+
+        buff_desc_t *desc = (buff_desc_t *)cookie;
+        enqueue_used(&rx_ring, desc->encoded_addr, d->len, desc->cookie);
+    }
+
+    /* Notify client */
+    sel4cp_notify(RX_CH);
+}
+
+static void
+complete_tx(volatile struct enet_regs *eth)
+{
+    unsigned int cnt_org;
+    void *cookie;
+    ring_ctx_t *ring = &tx;
+    unsigned int head = ring->head;
+    unsigned int cnt = 0;
+
+    while (head != ring->tail) {
+        if (0 == cnt) {
+            cnt = tx_lengths[head];
+            if ((0 == cnt) || (cnt > TX_COUNT)) {
+                /* We are not supposed to read 0 here. */
+                sel4cp_dbg_puts("complete_tx with cnt=0 or max");
+                return;
+            }
+            cnt_org = cnt;
+            cookie = ring->cookies[head];
+        }
+
+        volatile struct descriptor *d = &(ring->descr[head]);
+
+        /* If this buffer was not sent, we can't release any buffer. */
+        if (d->stat & TXD_READY) {
+            /* give it another chance */
+            if (!(eth->tdar & TDAR_TDAR)) {
+                eth->tdar = TDAR_TDAR;
+            }
+            if (d->stat & TXD_READY) {
+                return;
+            }
+        }
+
+        /* Go to next buffer, handle roll-over. */
+        if (++head == TX_COUNT) {
+            head = 0;
+        }
+
+        if (0 == --cnt) {
+            ring->head = head;
+            /* race condition if add/remove is not synchronized. */
+            ring->remain += cnt_org;
+            /* give the buffer back */
+            buff_desc_t *desc = (buff_desc_t *)cookie;
+            enqueue_avail(&tx_ring, desc->encoded_addr, desc->len, desc->cookie);
         }
     }
 
-    eth->rdar = RDAR_RDAR;
+    /* The only reason to arrive here is when head equals tails. If cnt is not
+     * zero, then there is some kind of overflow or data corruption. The number
+     * of tx descriptors holding data can't exceed the space in the ring.
+     */
+    if (0 != cnt) {
+        sel4cp_dbg_puts("head reached tail, but cnt!= 0");
+    }
 }
 
-static void handle_eth(sel4cp_channel ch, volatile struct enet_regs *eth)
+static void
+raw_tx(volatile struct enet_regs *eth, unsigned int num, uintptr_t *phys,
+                  unsigned int *len, void *cookie)
+{
+    ring_ctx_t *ring = &tx;
+
+    /* Ensure we have room */
+    if (ring->remain < num) {
+        /* not enough room, try to complete some and check again */
+        complete_tx(eth);
+        unsigned int rem = ring->remain;
+        if (rem < num) {
+            sel4cp_dbg_puts("TX queue lacks space");
+            return;
+        }
+    }
+
+    __sync_synchronize();
+
+    unsigned int tail = ring->tail;
+    unsigned int tail_new = tail;
+
+    unsigned int i = num;
+    while (i-- > 0) {
+        uint16_t stat = TXD_READY;
+        if (0 == i) {
+            stat |= TXD_ADDCRC | TXD_LAST;
+        }
+
+        unsigned int idx = tail_new;
+        if (++tail_new == TX_COUNT) {
+            tail_new = 0;
+            stat |= WRAP;
+        }
+        update_ring_slot(ring, idx, *phys++, *len++, stat);
+    }
+
+    ring->cookies[tail] = cookie;
+    tx_lengths[tail] = num;
+    ring->tail = tail_new;
+    /* There is a race condition here if add/remove is not synchronized. */
+    ring->remain -= num;
+
+    __sync_synchronize();
+
+    if (!(eth->tdar & TDAR_TDAR)) {
+        eth->tdar = TDAR_TDAR;
+    }
+}
+
+static void 
+handle_tx(volatile struct enet_regs *eth)
+{
+    sel4cp_dbg_puts("We have a packet to send");
+    uintptr_t buffer = 0;
+    unsigned int len = 0;
+    void *cookie = NULL;
+
+    while (driver_dequeue(tx_ring.used_ring, &buffer, &len, &cookie)) {
+        seL4_ARM_VSpace_Clean_Data(3, buffer, buffer + len);
+        uintptr_t phys = getPhysAddr(buffer);
+        raw_tx(eth, 1, &phys, &len, cookie);
+    }
+}
+
+static void 
+handle_eth(volatile struct enet_regs *eth)
 {
     uint32_t e = eth->eir & IRQ_MASK;
     /* write to clear events */
@@ -189,12 +389,12 @@ static void handle_eth(sel4cp_channel ch, volatile struct enet_regs *eth)
     while (e & IRQ_MASK) {
         if (e & NETIRQ_TXF) {
             sel4cp_dbg_puts("Transmit is complete");
-            // complete_tx(dev);
+            complete_tx(eth);
         }
         if (e & NETIRQ_RXF) {
             sel4cp_dbg_puts("We got a packet!");
-            handle_rx(ch, eth);
-            //fill_rx_bufs(dev);
+            handle_rx(eth);
+            fill_rx_bufs(eth);
         }
         if (e & NETIRQ_EBERR) {
             sel4cp_dbg_puts("Error: System bus/uDMA");
@@ -206,30 +406,30 @@ static void handle_eth(sel4cp_channel ch, volatile struct enet_regs *eth)
     }
 }
 
-static void eth_setup(void)
+static void 
+eth_setup(void)
 {
     get_mac_addr(eth, mac);
     sel4cp_dbg_puts("MAC: ");
     dump_mac(mac);
     sel4cp_dbg_puts("\n");
 
-    rbd = (void *)hw_ring_buffer_vaddr;
-    tbd = (void *)(hw_ring_buffer_vaddr + (sizeof(struct rbd) * RBD_COUNT));
+    /* set up descriptor rings */
+    rx.cnt = RX_COUNT;
+    rx.remain = rx.cnt - 2;
+    rx.tail = 0;
+    rx.head = 0;
+    rx.phys = shared_dma_paddr;
+    rx.cookies = (void **)rx_cookies;
+    rx.descr = (volatile struct descriptor *)hw_ring_buffer_vaddr;
 
-    for (unsigned i = 0; i < RBD_COUNT; i++) {
-        rbd[i].data_length = 0;
-        rbd[i].flags = RXD_EMPTY;
-        rbd[i].addr = packet_buffer_paddr + (i * PACKET_BUFFER_SIZE);
-    }
-
-    for (unsigned i = 0; i < TBD_COUNT; i++) {
-        tbd[i].data_length = 0;
-        tbd[i].flags = 0;
-        tbd[i].addr = packet_buffer_paddr + ((RBD_COUNT + i) * PACKET_BUFFER_SIZE);
-    }
-
-    rbd[RBD_COUNT-1].flags |= WRAP;
-    tbd[TBD_COUNT-1].flags |= WRAP;
+    tx.cnt = TX_COUNT;
+    tx.remain = tx.cnt - 2;
+    tx.tail = 0;
+    tx.head = 0;
+    tx.phys = shared_dma_paddr + (sizeof(struct descriptor) * RX_COUNT);
+    tx.cookies = (void **)tx_cookies;
+    tx.descr = (volatile struct descriptor *)(hw_ring_buffer_vaddr + (sizeof(struct descriptor) * RX_COUNT));
 
     /* Perform reset */
     eth->ecr = ECR_RESET;
@@ -288,7 +488,7 @@ static void eth_setup(void)
     sel4cp_dbg_puts("\n");
 
     eth->rdsr = hw_ring_buffer_paddr;
-    eth->tdsr = hw_ring_buffer_paddr + (sizeof(struct rbd) * RBD_COUNT);
+    eth->tdsr = hw_ring_buffer_paddr + (sizeof(struct descriptor) * RX_COUNT);
 
     /* Size of max eth packet size */
     eth->mrbr = MAX_PACKET_SIZE;
@@ -301,17 +501,12 @@ static void eth_setup(void)
 
     /* Set Enable  in ECR */
     eth->ecr |= ECR_ETHEREN;
-    //dump_reg("rcr", eth->rcr);
-    //dump_reg("ecr", eth->ecr);
 
     eth->rdar = RDAR_RDAR;
 
     /* enable events */
     eth->eir = eth->eir;
     eth->eimr = IRQ_MASK;
-
-    sel4cp_dbg_puts(sel4cp_name);
-    sel4cp_dbg_puts(": init complete -- waiting for interrupt\n");
 }
 
 void init(void)
@@ -320,27 +515,41 @@ void init(void)
     sel4cp_dbg_puts(": elf PD init function running\n");
 
     eth_setup();
-    sel4cp_dbg_puts("eth->eimr = ");
-    puthex64(eth->eimr);
-    sel4cp_dbg_puts("\n");
-    sel4cp_dbg_puts("eth->eir = ");
-    puthex64(eth->eir);
-    sel4cp_dbg_puts("\n");
+
+    /* Set up shared memory regions */
+    ring_init(&rx_ring, (ring_buffer_t *)rx_avail, (ring_buffer_t *)rx_used, NULL, 1);
+    ring_init(&tx_ring, (ring_buffer_t *)tx_avail, (ring_buffer_t *)tx_used, NULL, 1);
+
+    /* This should actually go in lwip component.... */
+    for (int i = 0; i < RX_COUNT - 1; i++) {
+        // TODO Change cookie. 
+        uintptr_t addr = shared_dma_vaddr + (MAX_PACKET_SIZE * i);
+        enqueue_avail(&rx_ring, addr, MAX_PACKET_SIZE, NULL);
+    }
+
+    for (int i = 0; i < TX_COUNT - 1; i++) {
+        // TODO Change cookie. 
+        uintptr_t addr = shared_dma_vaddr + (MAX_PACKET_SIZE * i);
+        enqueue_avail(&tx_ring, addr, MAX_PACKET_SIZE, NULL);
+    }
+
+    fill_rx_bufs();
+    sel4cp_dbg_puts(sel4cp_name);
+    sel4cp_dbg_puts(": init complete -- waiting for interrupt\n");
 }
 
 void notified(sel4cp_channel ch)
 {
-    sel4cp_dbg_puts("We got a notification");
-    dump_reg("CH", ch);
+    //sel4cp_dbg_puts("We got a notification");
     switch(ch) {
         case IRQ_CH:
-            handle_eth(ch, eth);
+            handle_eth(eth);
             sel4cp_irq_ack(ch);
             break;
-        /* this is where our transmit notification would come in */
+        case TX_CH:
+            handle_tx(eth);
         default:
             sel4cp_dbg_puts("eth driver: received notification on unexpected channel\n");
-            //dump_reg("CH", ch);
             break;
     }
 }

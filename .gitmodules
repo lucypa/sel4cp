@@ -1,0 +1,3 @@
+[submodule "example/example/imx8/echo_server/ethernet/lwip"]
+	path = example/example/imx8/echo_server/ethernet/lwip
+	url = https://github.com/lwip-tcpip/lwip
