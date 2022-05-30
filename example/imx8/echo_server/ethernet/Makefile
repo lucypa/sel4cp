@@ -32,19 +32,18 @@ LWIPDIR=lwip/src
 
 BOARD_DIR := $(SEL4CP_SDK)/board/$(SEL4CP_BOARD)/$(SEL4CP_CONFIG)
 
-IMAGES := eth.elf lwip.elf
-CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 -Wall  -Wno-unused-function -Werror -I$(BOARD_DIR)/include
+IMAGES := eth.elf lwip.elf benchmark.elf
+CFLAGS := -mcpu=$(CPU) -mstrict-align -ffreestanding -g3 -O3 -Wall  -Wno-unused-function -I$(BOARD_DIR)/include
 LDFLAGS := -L$(BOARD_DIR)/lib
 LIBS := -lsel4cp -Tsel4cp.ld -lc
 
-#-nostdlib
 
 IMAGE_FILE = $(BUILD_DIR)/loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
 
-CFLAGS += -I$(LWIPDIR)/include -I.              \
-	-I$(BUILD_DIR)/include/arch        \
-	-I$(BUILD_DIR)/include				\
+CFLAGS += -I$(LWIPDIR)/include -I.	\
+	-I$(BUILD_DIR)/include/arch	\
+	-I$(BUILD_DIR)/include	\
 	-I$(LWIPDIR)/include/ipv4
 
 # COREFILES, CORE4FILES: The minimum set of files needed for lwIP.
@@ -82,14 +81,15 @@ CORE4FILES=$(LWIPDIR)/core/ipv4/acd.c \
 # NETIFFILES: Files implementing various generic network interface functions
 NETIFFILES=$(LWIPDIR)/netif/ethernet.c
 
-MAIN_FILES=lwip.c       \
+MAIN_FILES=lwip.c	\
 
 # LWIPFILES: All the above.
 LWIPFILES=$(MAIN_FILES) $(COREFILES) $(CORE4FILES) $(NETIFFILES)
-OBJS := $(LWIPFILES:.c=.o) lwip.o shared_ringbuffer.o
+OBJS := $(LWIPFILES:.c=.o) lwip.o shared_ringbuffer.o utilization_socket.o udp_echo_socket.o timer.o
 
 ETH_OBJS := eth.o shared_ringbuffer.o
-LWIP_OBJS := lwip.o shared_ringbuffer.o 
+#LWIP_OBJS := lwip.o shared_ringbuffer.o udp_echo_socket.o timer.o
+BENCH_OBJS := benchmark.o
 
 all: $(IMAGE_FILE)
 
@@ -103,6 +103,9 @@ $(BUILD_DIR)/eth.elf: $(addprefix $(BUILD_DIR)/, $(ETH_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(BUILD_DIR)/lwip.elf: $(addprefix $(BUILD_DIR)/, $(OBJS))
+	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
+
+$(BUILD_DIR)/benchmark.elf: $(addprefix $(BUILD_DIR)/, $(BENCH_OBJS))
 	$(LD) $(LDFLAGS) $^ $(LIBS) -o $@
 
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) eth.system

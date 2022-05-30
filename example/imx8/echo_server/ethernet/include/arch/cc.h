@@ -64,8 +64,7 @@ typedef uintptr_t mem_ptr_t;
 /* Plaform specific diagnostic output */
 #define LWIP_PLATFORM_DIAG(x)           \
         do {                            \
-            sel4cp_dbg_puts(x);         \
-            while(1);                   \
+            sel4cp_dbg_puts("error");         \
         } while(0)
 
 #define LWIP_PLATFORM_ASSERT(x)                                 \

@@ -15,13 +15,14 @@
 #include <stdlib.h>
 
 #define NO_SYS                          1
-#define NO_SYS_NO_TIMERS                1
-#define LWIP_TIMERS                     0
+#define NO_SYS_NO_TIMERS                0
+#define LWIP_TIMERS                     1
 #define LWIP_NETCONN                    0
 #define LWIP_SOCKET                     0
 #define LWIP_IGMP                       1
 #define LWIP_RAND                       rand
 #define LWIP_DHCP                       1
+#define LWIP_UDP                        1
 
 #define MEM_ALIGNMENT 4
 #define MEM_SIZE                        0x4000
@@ -43,13 +44,15 @@
 #define LWIP_STATS 0
 
 /* Debugging options */
-//#define LWIP_DEBUG
+#define LWIP_DEBUG
 /* Change this to LWIP_DBG_LEVEL_ALL to see a trace */
-//#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_WARNING
+#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_WARNING
 
-/*#define ETHARP_DEBUG                    LWIP_DBG_ON
-#define PBUF_DEBUG                      LWIP_DBG_ON
-#define IP_DEBUG                        LWIP_DBG_ON
+/*#define DHCP_DEBUG                      LWIP_DBG_ON
+#define UDP_DEBUG                       LWIP_DBG_ON
+#define ETHARP_DEBUG                    LWIP_DBG_ON*/
+//#define PBUF_DEBUG                      LWIP_DBG_ON
+/*#define IP_DEBUG                        LWIP_DBG_ON
 #define TCPIP_DEBUG                     LWIP_DBG_ON
 #define DHCP_DEBUG                      LWIP_DBG_ON
 #define UDP_DEBUG                       LWIP_DBG_ON*/

@@ -11,7 +11,7 @@ ifeq ($(strip $(GCC_CPU)),)
 $(error GCC_CPU must be specified)
 endif
 
-TOOLCHAIN := aarch64-none-elf-
+TOOLCHAIN := aarch64-unknown-linux-gnu-
 CFLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -mcpu=$(GCC_CPU) -Wall -Wno-maybe-uninitialized -Werror -I$(SEL4_SDK)/include
 
 PROGS := monitor.elf

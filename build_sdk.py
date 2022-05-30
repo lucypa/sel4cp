@@ -54,6 +54,8 @@ SUPPORTED_BOARDS = (
             "KernelPlatform": "tqma8xqp1gb",
             "KernelIsMCS": True,
             "KernelArmExportPCNTUser": True,
+            "KernelArmExportPMUUser": True,
+            "KernelBenchmarks": "track_utilisation",
         },
         examples = {
             "ethernet": Path("example/tqma8xqp1gb/ethernet")
@@ -68,11 +70,13 @@ SUPPORTED_BOARDS = (
             "KernelARMPlatform": "zcu102",
             "KernelIsMCS": True,
             "KernelArmExportPCNTUser": True,
+            "KernelArmExportPMUUser": True,
+            "KernelBenchmarks": "track_utilisation",
         },
         examples = {
             "hello": Path("example/zcu102/hello")
         }
-    )
+    ),
     BoardInfo(
         name="imx8mq",
         gcc_cpu="cortex-a53",
@@ -81,19 +85,31 @@ SUPPORTED_BOARDS = (
             "KernelPlatform": "imx8mq-evk",
             "KernelIsMCS": True,
             "KernelArmExportPCNTUser": True,
+            "KernelArmExportPMUUser": True,
+            "KernelBenchmarks": "track_utilisation",
         },
         examples = {
-            "hello": Path("example/imx8/echo_server/ethernet")
+            "eth": Path("example/imx8/echo_server/ethernet")
+        }
+    ),
+    BoardInfo(
+        name="imx8mm",
+        gcc_cpu="cortex-a53",
+        loader_link_address=0x41000000,
+        kernel_options = {
+            "KernelPlatform": "imx8mm-evk",
+            "KernelIsMCS": True,
+            "KernelArmExportPCNTUser": True,
+            "KernelArmExportPMUUser": True,
+            "KernelBenchmarks": "track_utilisation",
+        },
+        examples = {
+            "eth": Path("example/imx8/echo_server/ethernet")
         }
     ),
 )
 
 SUPPORTED_CONFIGS = (
-    ConfigInfo(
-        name="release",
-        debug=False,
-        kernel_options = {},
-    ),
     ConfigInfo(
         name="debug",
         debug=True,
@@ -104,6 +120,14 @@ SUPPORTED_CONFIGS = (
         }
     ),
 )
+
+'''
+    ConfigInfo(
+        name="release",
+        debug=False,
+        kernel_options = {},
+    ),
+'''
 
 
 def tar_filter(tarinfo: TarInfo) -> TarInfo:
@@ -137,15 +161,15 @@ def test_tool() -> None:
     assert r == 0
 
 def build_tool(tool_target: Path) -> None:
-    pyoxidizer = ENV_BIN_DIR / "pyoxidizer"
-    if not pyoxidizer.exists():
-        raise Exception("pyoxidizer does not appear to be installed in your Python environment")
+    pyoxidizer = "/usr/local/bin/pyoxidizer"
+    #if not pyoxidizer.exists():
+    #    raise Exception("pyoxidizer does not appear to be installed in your Python environment")
     r = system(
-        f"{pyoxidizer} build --release --path tool --target-triple x86_64-unknown-linux-musl"
+        f"{pyoxidizer} build --release --path tool --target-triple aarch64-apple-darwin"
     )
     assert r == 0
 
-    tool_output = "./tool/build/x86_64-unknown-linux-musl/release/install/sel4cp"
+    tool_output = "./tool/build/aarch64-apple-darwin/release/install/sel4cp"
 
     r = system(f"strip {tool_output}")
     assert r == 0
@@ -189,6 +213,8 @@ def build_sel4(
         f" -DPYTHON3={executable} " \
         f" -DKernelPlatform={platform} {config_str} " \
         f"-S {sel4_dir.absolute()} -B {sel4_build_dir.absolute()}")
+    
+    cmd += " -DCROSS_COMPILER_PREFIX=aarch64-unknown-linux-gnu-"
 
     r = system(cmd)
     if r != 0:
@@ -364,7 +390,7 @@ def main() -> None:
         test_tool()
         build_tool(tool_target)
 
-    build_doc(root_dir)
+    #build_doc(root_dir)
 
     build_dir = Path("build")
     for board in SUPPORTED_BOARDS:
@@ -391,17 +417,17 @@ def main() -> None:
                 dest.chmod(0o444)
 
     # At this point we create a tar.gz file
-    with tar_open(tar_file, "w:gz") as tar:
-        tar.add(root_dir, arcname=root_dir.name, filter=tar_filter)
+    '''with tar_open(tar_file, "w:gz") as tar:
+        tar.add(root_dir, arcname=root_dir.name, filter=tar_filter)'''
 
     # Build the source tar
-    process = popen("git ls-files")
+    '''process = popen("git ls-files")
     filenames = [Path(fn.strip()) for fn in process.readlines()]
     process.close()
     source_prefix = Path(f"{NAME}-source-{VERSION}")
     with tar_open(source_tar_file, "w:gz") as tar:
         for filename in filenames:
-            tar.add(filename, arcname=source_prefix / filename, filter=tar_filter)
+            tar.add(filename, arcname=source_prefix / filename, filter=tar_filter)'''
 
 if __name__ == "__main__":
     main()

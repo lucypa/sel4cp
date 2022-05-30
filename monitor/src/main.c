@@ -79,7 +79,7 @@
  *
  * FIXME: This can be smaller once compression is enabled.
  */
-#define BOOTSTRAP_INVOCATION_DATA_SIZE 90
+#define BOOTSTRAP_INVOCATION_DATA_SIZE 110
 
 seL4_IPCBuffer *__sel4_ipc_buffer;
 
@@ -527,6 +527,12 @@ monitor(void)
 
                 break;
             }
+            case seL4_Fault_UnknownSyscall: 
+                puts("Unknown syscall!\n");
+                break;
+            case seL4_Fault_Timeout:
+                puts("Fault timeout\n");
+                break;
             default:
                 puts("Unknown fault\n");
                 break;

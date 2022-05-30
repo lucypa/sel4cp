@@ -22,10 +22,10 @@ mycpy(char *dst, char *src, unsigned int length)
 void
 init(void)
 {
-    //char *shello = "hello";
+    char *shello = "hello";
     sel4cp_dbg_puts("starting...\n");
 
-    //mycpy((char*)shmem, shello, 5);
+    mycpy((char*)shmem_vaddr, shello, 5);
 
     sel4cp_notify(0);
 }
@@ -34,7 +34,6 @@ void
 notified(sel4cp_channel ch)
 {
     sel4cp_dbg_puts("notified\n");
-    sel4cp_dbg_puts("goodbye");
-    //sel4cp_dbg_puts((char *)shmem);
+    sel4cp_dbg_puts((char *)shmem_vaddr);
     sel4cp_dbg_puts("\n");
 }

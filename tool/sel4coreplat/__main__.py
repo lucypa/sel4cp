@@ -64,6 +64,7 @@ from sel4coreplat.sel4 import (
     Sel4TcbBindNotification,
     Sel4TcbResume,
     Sel4CnodeMint,
+    Sel4CnodeCopy,
     Sel4UntypedRetype,
     Sel4IrqControlGet,
     Sel4IrqHandlerSetNotification,
@@ -154,6 +155,7 @@ INPUT_CAP_IDX = 1
 FAULT_EP_CAP_IDX = 2
 VSPACE_CAP_IDX = 3
 REPLY_CAP_IDX = 4
+TCB_CAP_IDX = 5
 BASE_OUTPUT_NOTIFICATION_CAP = 10
 BASE_OUTPUT_ENDPOINT_CAP = BASE_OUTPUT_NOTIFICATION_CAP + 64
 BASE_IRQ_CAP = BASE_OUTPUT_ENDPOINT_CAP + 64
@@ -1447,6 +1449,10 @@ def build_system(
     invocation = Sel4TcbSetSpace(tcb_objects[0].cap_addr, badged_fault_ep, cnode_objects[0].cap_addr, kernel_config.cap_address_bits - PD_CAP_BITS, vspace_objects[0].cap_addr, 0)
     invocation.repeat(len(system.protection_domains), tcb=1, fault_ep=1, cspace_root=1, vspace_root=1)
     system_invocations.append(invocation)
+
+    # map tcb cap into cspace
+    for tcb_obj, pd in zip(tcb_objects, system.protection_domains):
+        system_invocations.append(Sel4CnodeCopy(cnode_objects.cap_addr, TCB_CAP_IDX, PD_CAP_BITS, root_cnode_cap, tcb_obj.cap_addr, kernel_config.cap_address_bits, SEL4_RIGHTS_ALL))
 
     # set IPC buffer
     for tcb_obj, pd, ipc_buffer_obj in zip(tcb_objects, system.protection_domains, ipc_buffer_objects):

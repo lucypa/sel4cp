@@ -28,10 +28,9 @@ void
 notified(sel4cp_channel ch)
 {
     sel4cp_dbg_puts("notified\n");
-    sel4cp_dbg_puts("hello");
-    //sel4cp_dbg_puts((char *)shmem);
+    sel4cp_dbg_puts((char *)shmem_vaddr);
     sel4cp_dbg_puts("\n");
-    //char *sbye = "goodbye";
-    //mycpy((char *)shmem, sbye, 7);
+    char *sbye = "goodbye";
+    mycpy((char *)shmem_vaddr, sbye, 7);
     sel4cp_notify(0);
 }

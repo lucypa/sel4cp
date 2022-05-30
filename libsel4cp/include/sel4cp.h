@@ -11,6 +11,7 @@
 
 #define __thread
 #include <sel4/sel4.h>
+#include <sel4/benchmark_utilisation_types.h>
 
 typedef unsigned int sel4cp_channel;
 typedef seL4_MessageInfo_t sel4cp_msginfo;
@@ -78,4 +79,22 @@ static uint64_t
 sel4cp_mr_get(uint8_t mr)
 {
     return seL4_GetMR(mr);
+}
+
+static void
+sel4cp_benchmark_start(void)
+{
+    seL4_BenchmarkResetAllThreadsUtilisation();
+    seL4_BenchmarkResetLog(); 
+}
+
+static void
+sel4cp_benchmark_stop(uint64_t *total, uint64_t *idle, seL4_Word tcb_cptr)
+{
+    seL4_BenchmarkFinalizeLog();
+    seL4_BenchmarkGetThreadUtilisation(tcb_cptr);
+    uint64_t *buffer = (uint64_t *)&seL4_GetIPCBuffer()->msg[0];
+
+    *total = buffer[BENCHMARK_TOTAL_UTILISATION];
+    *idle = buffer[BENCHMARK_IDLE_LOCALCPU_UTILISATION];   
 }

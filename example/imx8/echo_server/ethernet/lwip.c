@@ -10,15 +10,20 @@
 #include "lwip/stats.h"
 #include "lwip/snmp.h"
 #include "lwip/sys.h"
+#include "lwip/dhcp.h"
 
 #include "shared_ringbuffer.h"
+#include "echo.h"
+#include "timer.h"
 
+#define IRQ    1
 #define TX_CH  2
 #define RX_CH  2
+#define INIT   4
 
 #define LINK_SPEED 1000000000 // Gigabit
 #define ETHER_MTU 1500
-#define NUM_BUFFERS 128
+#define NUM_BUFFERS 256
 #define BUF_SIZE 2048
 
 /* Memory regions. These all have to be here to keep compiler happy */
@@ -28,7 +33,6 @@ uintptr_t tx_avail;
 uintptr_t tx_used;
 uintptr_t shared_dma_vaddr;
 
-
 typedef enum {
     ORIGIN_RX_QUEUE,
     ORIGIN_TX_QUEUE,
@@ -36,9 +40,7 @@ typedef enum {
 
 typedef struct ethernet_buffer {
     /* The acutal underlying memory of the buffer */
-    unsigned char *buffer;
-    /* The encoded DMA address */
-    uintptr_t dma_addr;
+    uintptr_t buffer;
     /* The physical size of the buffer */
     size_t size;
     /* Queue from which the buffer was allocated */
@@ -62,6 +64,19 @@ typedef struct state {
 } state_t;
 
 state_t state;
+
+/* LWIP mempool declare literally just initialises an array big enough with the correct alignment */
+typedef struct lwip_custom_pbuf {
+    struct pbuf_custom custom;
+    ethernet_buffer_t *buffer;
+    state_t *state;
+} lwip_custom_pbuf_t;
+LWIP_MEMPOOL_DECLARE(
+    RX_POOL,
+    NUM_BUFFERS * 2,
+    sizeof(lwip_custom_pbuf_t),
+    "Zero-copy RX pool"
+);
 
 static char
 hexchar(unsigned int v)
@@ -99,20 +114,8 @@ static inline void return_buffer(state_t *state, ethernet_buffer_t *buffer)
 {
     /* As the rx_available ring is the size of the number of buffers we have,
     the ring should never be full. */
-    enqueue_avail(&(state->rx_ring), buffer->dma_addr, BUF_SIZE, buffer);
+    enqueue_avail(&(state->rx_ring), buffer->buffer, BUF_SIZE, buffer);
 }
-
-typedef struct lwip_custom_pbuf {
-    struct pbuf_custom custom;
-    ethernet_buffer_t *buffer;
-    state_t *state;
-} lwip_custom_pbuf_t;
-LWIP_MEMPOOL_DECLARE(
-    RX_POOL,
-    NUM_BUFFERS * 2,
-    sizeof(lwip_custom_pbuf_t),
-    "Zero-copy RX pool"
-);
 
 /**
  * Free a pbuf. This also returns the underlying buffer to
@@ -155,9 +158,36 @@ static struct pbuf *create_interface_buffer(state_t *state, ethernet_buffer_t *b
         length,
         PBUF_REF,
         &custom_pbuf->custom,
-        buffer->buffer,
+        (void *)buffer->buffer,
         buffer->size
     );
+}
+
+/**
+ * Allocate an empty TX buffer from the empty pool
+ *
+ * @param state client state data.
+ * @param length length of buffer required
+ *
+ */
+static inline ethernet_buffer_t *alloc_tx_buffer(state_t *state, size_t length)
+{   
+    if (BUF_SIZE < length) {
+        sel4cp_dbg_puts("Requested buffer size too large.");
+        return NULL;
+    }
+
+    uintptr_t encoded_addr;
+    unsigned int len;
+    ethernet_buffer_t *buffer;
+
+    dequeue_avail(&state->tx_ring, &encoded_addr, &len, (void **)&buffer);
+
+    if (!buffer) {
+        sel4cp_dbg_puts("lwip: dequeued a null ethernet buffer\n");
+    }
+
+    return buffer;
 }
 
 static err_t lwip_eth_send(struct netif *netif, struct pbuf *p)
@@ -166,7 +196,40 @@ static err_t lwip_eth_send(struct netif *netif, struct pbuf *p)
     add to used tx ring, notify server */
     err_t ret = ERR_OK;
 
-    sel4cp_dbg_puts("We have packets to send from lwip");
+    //sel4cp_dbg_puts("We have packets to send from lwip");
+
+    if (p->tot_len > BUF_SIZE) {
+        return ERR_MEM;
+    }
+
+    state_t *state = (state_t *)netif->state;
+
+    ethernet_buffer_t *buffer = alloc_tx_buffer(state, p->tot_len);
+    if (buffer == NULL) {
+        return ERR_MEM;
+    }
+    unsigned char *frame = (unsigned char *)buffer->buffer;
+
+    /* Copy all buffers that need to be copied */
+    unsigned int copied = 0;
+    for (struct pbuf *curr = p; curr != NULL; curr = curr->next) {
+        unsigned char *buffer_dest = &frame[copied];
+        if ((uintptr_t)buffer_dest != (uintptr_t)curr->payload) {
+            /* Don't copy memory back into the same location */
+            memcpy(buffer_dest, curr->payload, curr->len);
+        }
+        copied += curr->len;
+    }
+
+    /* insert into the used tx queue */
+    int error = enqueue_used(&state->tx_ring, (uintptr_t)frame, copied, buffer);
+    if (error) {
+        return_buffer(state, buffer);
+        return ERR_MEM;
+    }
+
+    /* Notify the server */
+    sel4cp_notify(TX_CH);
 
     return ret;
 }
@@ -180,13 +243,7 @@ void process_rx_queue(void)
 
         dequeue_used(&state.rx_ring, &addr, &len, (void **)&buffer);
 
-        sel4cp_dbg_puts("processing packet ");
-        puthex64(addr);
-        sel4cp_dbg_puts(" of length ");
-        puthex64(len);
-        sel4cp_dbg_puts("\n");
-
-        struct pbuf *p = create_interface_buffer(&state, buffer, len);
+        struct pbuf *p = create_interface_buffer(&state, (void *)buffer, len);
 
         if (state.netif.input(p, &state.netif) != ERR_OK) {
             // If it is successfully received, the receiver controls whether or not it gets freed.
@@ -222,8 +279,48 @@ static err_t ethernet_init(struct netif *netif)
     NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED);
     netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_IGMP;
 
-    sel4cp_dbg_puts("netif initialised");
+    //sel4cp_dbg_puts("netif initialised\n");
     return ERR_OK;
+}
+
+static void netif_status_callback(struct netif *netif)
+{
+    if (dhcp_supplied_address(netif)) {
+        sel4cp_dbg_puts("DHCP request finished, IP address for netif ");
+        sel4cp_dbg_puts(netif->name);
+        sel4cp_dbg_puts(" is: ");
+        sel4cp_dbg_puts(ip4addr_ntoa(netif_ip4_addr(netif)));
+        sel4cp_dbg_puts("\n");
+    }
+}
+
+static void get_mac(void)
+{
+    sel4cp_ppcall(INIT, sel4cp_msginfo_new(0, 0));
+    uint32_t palr = sel4cp_mr_get(0);
+    uint32_t paur = sel4cp_mr_get(1);
+    state.mac[0] = palr >> 24;
+    state.mac[1] = palr >> 16 & 0xff;
+    state.mac[2] = palr >> 8 & 0xff;
+    state.mac[3] = palr & 0xff;
+    state.mac[4] = paur >> 24;
+    state.mac[5] = paur >> 16 & 0xff;
+}
+
+void init_post(void)
+{   
+    netif_set_status_callback(&(state.netif), netif_status_callback);
+    netif_set_up(&(state.netif));
+
+    if (dhcp_start(&(state.netif))) {
+        sel4cp_dbg_puts("failed to start DHCP negotiation\n");
+    }
+
+    setup_udp_socket();
+    setup_utilization_socket();
+
+    sel4cp_dbg_puts(sel4cp_name);
+    sel4cp_dbg_puts(": init complete -- waiting for notification\n");
 }
 
 void init(void)
@@ -232,21 +329,40 @@ void init(void)
     sel4cp_dbg_puts(": elf PD init function running\n");
 
     /* Set up shared memory regions */
-    ring_init(&state.rx_ring, (ring_buffer_t *)rx_avail, (ring_buffer_t *)rx_used, NULL, 0);
-    ring_init(&state.tx_ring, (ring_buffer_t *)tx_avail, (ring_buffer_t *)tx_used, NULL, 0);
+    ring_init(&state.rx_ring, (ring_buffer_t *)rx_avail, (ring_buffer_t *)rx_used, NULL, 1);
+    ring_init(&state.tx_ring, (ring_buffer_t *)tx_avail, (ring_buffer_t *)tx_used, NULL, 1);
+
+
+    for (int i = 0; i < NUM_BUFFERS - 1; i++) {
+        ethernet_buffer_t *buffer = &state.buffer_metadata[i];
+        *buffer = (ethernet_buffer_t) {
+            .buffer = shared_dma_vaddr + (BUF_SIZE * i),
+            .size = BUF_SIZE,
+            .origin = ORIGIN_TX_QUEUE,
+            .index = i + NUM_BUFFERS,
+        };
+        enqueue_avail(&state.rx_ring, buffer->buffer, BUF_SIZE, buffer);
+    }
+
+    for (int i = 0; i < NUM_BUFFERS - 1; i++) {
+        ethernet_buffer_t *buffer = &state.buffer_metadata[i + NUM_BUFFERS];
+        *buffer = (ethernet_buffer_t) {
+            .buffer = shared_dma_vaddr + (BUF_SIZE * (i + NUM_BUFFERS)),
+            .size = BUF_SIZE,
+            .origin = ORIGIN_TX_QUEUE,
+            .index = i + NUM_BUFFERS,
+        };
+
+        enqueue_avail(&state.tx_ring, buffer->buffer, BUF_SIZE, buffer);
+    }
+
+    lwip_init();
+
+    gpt_init();
 
     LWIP_MEMPOOL_INIT(RX_POOL);
 
-    /* Lets just hard code this for now and pass it via PPC later
-        TODO
-        00:04:9f:05:a6:62
-     */
-    state.mac[0] = 0x00;
-    state.mac[1] = 0x04;
-    state.mac[2] = 0x9f;
-    state.mac[3] = 0x05;
-    state.mac[4] = 0xa6;
-    state.mac[5] = 0x62;
+    get_mac();
 
     /* Set some dummy IP configuration values to get lwIP bootstrapped  */
     struct ip4_addr netmask, ipaddr, gw, multicast;
@@ -260,22 +376,27 @@ void init(void)
 
     if (!netif_add(&(state.netif), &ipaddr, &netmask, &gw, &state,
               ethernet_init, ethernet_input)) {
-        sel4cp_dbg_puts("Netif add returned NULL");
+        sel4cp_dbg_puts("Netif add returned NULL\n");
     }
+
     netif_set_default(&(state.netif));
 
-
-    sel4cp_dbg_puts(sel4cp_name);
-    sel4cp_dbg_puts(": init complete -- waiting for notification\n");
+    sel4cp_notify(INIT);
 }
 
 void notified(sel4cp_channel ch)
 {
-    sel4cp_dbg_puts("We got a notification");
     switch(ch) {
         case RX_CH:
-            sel4cp_dbg_puts("?");
             process_rx_queue();
+            break;
+        case INIT:
+            init_post();
+            break;
+        /* TODO: Change this so we don't need an IRQ */
+        case IRQ:
+            sys_check_timeouts();
+            break;
         default:
             sel4cp_dbg_puts("lwip: received notification on unexpected channel\n");
             break;

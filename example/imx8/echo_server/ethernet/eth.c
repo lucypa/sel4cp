@@ -6,12 +6,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <sel4cp.h>
+#include <sel4/sel4.h>
 #include "eth.h"
 #include "shared_ringbuffer.h"
 
 #define IRQ_CH 1
 #define TX_CH  2
 #define RX_CH  2
+#define INIT   4
 
 #define CCM_VADDR   0x2200000
 #define MDC_FREQ    20000000UL
@@ -149,7 +151,6 @@ getPhysAddr(uintptr_t virtual)
     }
 
     phys = shared_dma_paddr + offset;
-    puthex64(phys);
     return phys;
 }
 
@@ -180,7 +181,7 @@ alloc_rx_buf(size_t buf_size, void **cookie)
 
     /* Try to grab a buffer from the available ring */
     if (driver_dequeue(rx_ring.avail_ring, &addr, &len, cookie)) {
-        sel4cp_dbg_puts("RX Available ring is empty. No more buffers available");
+        sel4cp_dbg_puts("RX Available ring is empty\n");
         return 0;
     }
 
@@ -367,12 +368,11 @@ raw_tx(volatile struct enet_regs *eth, unsigned int num, uintptr_t *phys,
 static void 
 handle_tx(volatile struct enet_regs *eth)
 {
-    sel4cp_dbg_puts("We have a packet to send");
     uintptr_t buffer = 0;
     unsigned int len = 0;
     void *cookie = NULL;
 
-    while (driver_dequeue(tx_ring.used_ring, &buffer, &len, &cookie)) {
+    while (!driver_dequeue(tx_ring.used_ring, &buffer, &len, &cookie)) {
         seL4_ARM_VSpace_Clean_Data(3, buffer, buffer + len);
         uintptr_t phys = getPhysAddr(buffer);
         raw_tx(eth, 1, &phys, &len, cookie);
@@ -388,11 +388,9 @@ handle_eth(volatile struct enet_regs *eth)
 
     while (e & IRQ_MASK) {
         if (e & NETIRQ_TXF) {
-            sel4cp_dbg_puts("Transmit is complete");
             complete_tx(eth);
         }
         if (e & NETIRQ_RXF) {
-            sel4cp_dbg_puts("We got a packet!");
             handle_rx(eth);
             fill_rx_bufs(eth);
         }
@@ -483,10 +481,6 @@ eth_setup(void)
     eth->racc = RACC_LINEDIS;
 
     /* Set RDSR */
-    sel4cp_dbg_puts("RING BUFFER ADDR=: ");
-    puthex64((uintptr_t)hw_ring_buffer_paddr);
-    sel4cp_dbg_puts("\n");
-
     eth->rdsr = hw_ring_buffer_paddr;
     eth->tdsr = hw_ring_buffer_paddr + (sizeof(struct descriptor) * RX_COUNT);
 
@@ -509,6 +503,18 @@ eth_setup(void)
     eth->eimr = IRQ_MASK;
 }
 
+void init_post()
+{
+    /* Set up shared memory regions */
+    ring_init(&rx_ring, (ring_buffer_t *)rx_avail, (ring_buffer_t *)rx_used, NULL, 0);
+    ring_init(&tx_ring, (ring_buffer_t *)tx_avail, (ring_buffer_t *)tx_used, NULL, 0);
+
+    fill_rx_bufs();
+    sel4cp_dbg_puts(sel4cp_name);
+    sel4cp_dbg_puts(": init complete -- waiting for interrupt\n");
+    sel4cp_notify(INIT);
+}
+
 void init(void)
 {
     sel4cp_dbg_puts(sel4cp_name);
@@ -516,26 +522,24 @@ void init(void)
 
     eth_setup();
 
-    /* Set up shared memory regions */
-    ring_init(&rx_ring, (ring_buffer_t *)rx_avail, (ring_buffer_t *)rx_used, NULL, 1);
-    ring_init(&tx_ring, (ring_buffer_t *)tx_avail, (ring_buffer_t *)tx_used, NULL, 1);
+    /* wait for lwip to initialise buffers */
+}
 
-    /* This should actually go in lwip component.... */
-    for (int i = 0; i < RX_COUNT - 1; i++) {
-        // TODO Change cookie. 
-        uintptr_t addr = shared_dma_vaddr + (MAX_PACKET_SIZE * i);
-        enqueue_avail(&rx_ring, addr, MAX_PACKET_SIZE, NULL);
+seL4_MessageInfo_t
+protected(sel4cp_channel ch, sel4cp_msginfo msginfo)
+{
+    switch (ch) {
+        case INIT:
+            // get mac
+            sel4cp_mr_set(0, eth->palr);
+            sel4cp_mr_set(1, eth->paur);
+            return sel4cp_msginfo_new(0, 2);
+        default:
+            sel4cp_dbg_puts("Received ppc on unexpected channel ");
+            puthex64(ch);
+            break;
     }
-
-    for (int i = 0; i < TX_COUNT - 1; i++) {
-        // TODO Change cookie. 
-        uintptr_t addr = shared_dma_vaddr + (MAX_PACKET_SIZE * i);
-        enqueue_avail(&tx_ring, addr, MAX_PACKET_SIZE, NULL);
-    }
-
-    fill_rx_bufs();
-    sel4cp_dbg_puts(sel4cp_name);
-    sel4cp_dbg_puts(": init complete -- waiting for interrupt\n");
+    return sel4cp_msginfo_new(0, 0);
 }
 
 void notified(sel4cp_channel ch)
@@ -548,6 +552,10 @@ void notified(sel4cp_channel ch)
             break;
         case TX_CH:
             handle_tx(eth);
+            break;
+        case INIT:
+            init_post();
+            break;
         default:
             sel4cp_dbg_puts("eth driver: received notification on unexpected channel\n");
             break;
