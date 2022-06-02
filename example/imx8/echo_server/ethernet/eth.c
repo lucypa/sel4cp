@@ -15,7 +15,6 @@
 #define RX_CH  2
 #define INIT   4
 
-#define CCM_VADDR   0x2200000
 #define MDC_FREQ    20000000UL
 
 /* Memory regions. These all have to be here to keep compiler happy */
@@ -64,15 +63,6 @@ ring_handle_t tx_ring;
 static uint8_t mac[6];
 
 volatile struct enet_regs *eth = (void *)(uintptr_t)0x2000000;
-
-// clock controller. TODO: This should be abstracted out. 
-volatile uint32_t *ccgr_enet_set = (void *)(uintptr_t)CCM_VADDR + 0x40a0;
-volatile uint32_t *ccgr_enet_clr = (void *)(uintptr_t)CCM_VADDR + 0x40a4;
-volatile uint32_t *ccgr_sim_enet_set = (void *)(uintptr_t)CCM_VADDR + 0x4400;
-volatile uint32_t *ccgr_sim_enet_clr = (void *)(uintptr_t)CCM_VADDR + 0x4404;
-volatile uint32_t *enet_axi_target = (void *)(uintptr_t)CCM_VADDR + 0x8880;
-volatile uint32_t *enet_ref_target = (void *)(uintptr_t)CCM_VADDR + 0xa980;
-volatile uint32_t *enet_timer_target = (void *)(uintptr_t)CCM_VADDR + 0xaa00;
 
 
 static char
@@ -437,17 +427,6 @@ eth_setup(void)
     /* Clear and mask interrupts */
     eth->eimr = 0x00000000;
     eth->eir  = 0xffffffff;
-
-    /* Gate the clocks first */
-    *ccgr_enet_clr = 0x3;
-    *ccgr_sim_enet_clr = 0x3;
-    /* Set up the clocks */
-    *enet_axi_target = (1UL << 28) | 0x01000000; // ENABLE | MUX SYS1_PLL | POST AND PRE DIVIDE BY 1
-    *enet_ref_target = (1UL << 28) | 0x01000000; // ENABLE | MUX PLL2_DIV8 | POST AND PRE DIVIDE BY 1
-    *enet_timer_target = (1UL << 28) | 0x01000000 | ((4) & 0x3f); // ENABLE | MUX PLL2_DIV10 | POST DIVIDE BY 4, PRE DIVIDE BY 1
-    /* Ungate the clocks now */
-    *ccgr_enet_set = 0x3;
-    *ccgr_sim_enet_set = 0x3;
 
     /* set MDIO freq */
     eth->mscr = 24 << 1;

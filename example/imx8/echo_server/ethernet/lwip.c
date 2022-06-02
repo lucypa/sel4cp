@@ -395,10 +395,11 @@ void notified(sel4cp_channel ch)
             break;
         /* TODO: Change this so we don't need an IRQ */
         case IRQ:
-            sys_check_timeouts();
+            irq(ch);
             break;
         default:
             sel4cp_dbg_puts("lwip: received notification on unexpected channel\n");
             break;
     }
+    //sys_check_timeouts();
 }

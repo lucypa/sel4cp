@@ -15,7 +15,6 @@
 #include <stdlib.h>
 
 #define NO_SYS                          1
-#define NO_SYS_NO_TIMERS                0
 #define LWIP_TIMERS                     1
 #define LWIP_NETCONN                    0
 #define LWIP_SOCKET                     0
