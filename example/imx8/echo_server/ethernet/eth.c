@@ -9,6 +9,7 @@
 #include <sel4/sel4.h>
 #include "eth.h"
 #include "shared_ringbuffer.h"
+#include "util.h"
 
 #define IRQ_CH 1
 #define TX_CH  2
@@ -28,6 +29,7 @@ uintptr_t rx_avail;
 uintptr_t rx_used;
 uintptr_t tx_avail;
 uintptr_t tx_used;
+uintptr_t uart_base;
 
 /* Make the minimum frame buffer 2k. This is a bit of a waste of memory, but ensure alignment */
 #define PACKET_BUFFER_SIZE (2 * 1024)
@@ -63,39 +65,6 @@ ring_handle_t tx_ring;
 static uint8_t mac[6];
 
 volatile struct enet_regs *eth = (void *)(uintptr_t)0x2000000;
-
-
-static char
-hexchar(unsigned int v)
-{
-    return v < 10 ? '0' + v : ('a' - 10) + v;
-}
-
-static void
-puthex64(uint64_t x)
-{
-    char buffer[19];
-    buffer[0] = '0';
-    buffer[1] = 'x';
-    buffer[2] = hexchar((x >> 60) & 0xf);
-    buffer[3] = hexchar((x >> 56) & 0xf);
-    buffer[4] = hexchar((x >> 52) & 0xf);
-    buffer[5] = hexchar((x >> 48) & 0xf);
-    buffer[6] = hexchar((x >> 44) & 0xf);
-    buffer[7] = hexchar((x >> 40) & 0xf);
-    buffer[8] = hexchar((x >> 36) & 0xf);
-    buffer[9] = hexchar((x >> 32) & 0xf);
-    buffer[10] = hexchar((x >> 28) & 0xf);
-    buffer[11] = hexchar((x >> 24) & 0xf);
-    buffer[12] = hexchar((x >> 20) & 0xf);
-    buffer[13] = hexchar((x >> 16) & 0xf);
-    buffer[14] = hexchar((x >> 12) & 0xf);
-    buffer[15] = hexchar((x >> 8) & 0xf);
-    buffer[16] = hexchar((x >> 4) & 0xf);
-    buffer[17] = hexchar(x & 0xf);
-    buffer[18] = 0;
-    sel4cp_dbg_puts(buffer);
-}
 
 static void get_mac_addr(volatile struct enet_regs *reg, uint8_t *mac)
 {
@@ -240,6 +209,7 @@ handle_rx(volatile struct enet_regs *eth)
         ring->remain++;
 
         buff_desc_t *desc = (buff_desc_t *)cookie;
+
         enqueue_used(&rx_ring, desc->encoded_addr, d->len, desc->cookie);
     }
 
@@ -353,6 +323,7 @@ raw_tx(volatile struct enet_regs *eth, unsigned int num, uintptr_t *phys,
     if (!(eth->tdar & TDAR_TDAR)) {
         eth->tdar = TDAR_TDAR;
     }
+
 }
 
 static void 

@@ -44,9 +44,7 @@ class ConfigInfo:
     debug: bool
     kernel_options: KERNEL_CONFIG_TYPE
 
-
-SUPPORTED_BOARDS = (
-    BoardInfo(
+    '''BoardInfo(
         name="tqma8xqp1gb",
         gcc_cpu="cortex-a35",
         loader_link_address=0x80280000,
@@ -76,7 +74,8 @@ SUPPORTED_BOARDS = (
         examples = {
             "hello": Path("example/zcu102/hello")
         }
-    ),
+    ),'''
+SUPPORTED_BOARDS = (
     BoardInfo(
         name="imx8mq",
         gcc_cpu="cortex-a53",
@@ -85,8 +84,7 @@ SUPPORTED_BOARDS = (
             "KernelPlatform": "imx8mq-evk",
             "KernelIsMCS": True,
             "KernelArmExportPCNTUser": True,
-            "KernelArmExportPMUUser": True,
-            "KernelBenchmarks": "track_utilisation",
+            "KernelArmExportPMUUser": True
         },
         examples = {
             "eth": Path("example/imx8/echo_server/ethernet")
@@ -100,8 +98,7 @@ SUPPORTED_BOARDS = (
             "KernelPlatform": "imx8mm-evk",
             "KernelIsMCS": True,
             "KernelArmExportPCNTUser": True,
-            "KernelArmExportPMUUser": True,
-            "KernelBenchmarks": "track_utilisation",
+            "KernelArmExportPMUUser": True
         },
         examples = {
             "eth": Path("example/imx8/echo_server/ethernet")
@@ -119,15 +116,13 @@ SUPPORTED_CONFIGS = (
             "KernelVerificationBuild": False
         }
     ),
-)
-
-'''
     ConfigInfo(
         name="release",
         debug=False,
-        kernel_options = {},
+        kernel_options = {
+        },
     ),
-'''
+)
 
 
 def tar_filter(tarinfo: TarInfo) -> TarInfo:
