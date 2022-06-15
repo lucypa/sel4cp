@@ -15,6 +15,7 @@
 #include "shared_ringbuffer.h"
 #include "echo.h"
 #include "timer.h"
+//#include "fence.h"
 
 #define IRQ    1
 #define TX_CH  2
@@ -23,7 +24,7 @@
 
 #define LINK_SPEED 1000000000 // Gigabit
 #define ETHER_MTU 1500
-#define NUM_BUFFERS 256
+#define NUM_BUFFERS 512
 #define BUF_SIZE 2048
 
 /* Memory regions. These all have to be here to keep compiler happy */
@@ -32,6 +33,7 @@ uintptr_t rx_used;
 uintptr_t tx_avail;
 uintptr_t tx_used;
 uintptr_t shared_dma_vaddr;
+uintptr_t uart_base;
 
 typedef enum {
     ORIGIN_RX_QUEUE,
@@ -78,7 +80,7 @@ LWIP_MEMPOOL_DECLARE(
     "Zero-copy RX pool"
 );
 
-static char
+/*static char
 hexchar(unsigned int v)
 {
     return v < 10 ? '0' + v : ('a' - 10) + v;
@@ -108,7 +110,7 @@ puthex64(uint64_t x)
     buffer[17] = hexchar(x & 0xf);
     buffer[18] = 0;
     sel4cp_dbg_puts(buffer);
-}
+}*/
 
 static inline void return_buffer(state_t *state, ethernet_buffer_t *buffer)
 {
@@ -177,14 +179,13 @@ static inline ethernet_buffer_t *alloc_tx_buffer(state_t *state, size_t length)
         return NULL;
     }
 
-    uintptr_t encoded_addr;
+    uintptr_t addr;
     unsigned int len;
     ethernet_buffer_t *buffer;
 
-    dequeue_avail(&state->tx_ring, &encoded_addr, &len, (void **)&buffer);
-
+    dequeue_avail(&state->tx_ring, &addr, &len, (void **)&buffer);
     if (!buffer) {
-        sel4cp_dbg_puts("lwip: dequeued a null ethernet buffer\n");
+        print("lwip: dequeued a null ethernet buffer\n");
     }
 
     return buffer;
@@ -195,8 +196,6 @@ static err_t lwip_eth_send(struct netif *netif, struct pbuf *p)
     /* Grab an available TX buffer, copy pbuf data over,
     add to used tx ring, notify server */
     err_t ret = ERR_OK;
-
-    //sel4cp_dbg_puts("We have packets to send from lwip");
 
     if (p->tot_len > BUF_SIZE) {
         return ERR_MEM;
@@ -221,6 +220,15 @@ static err_t lwip_eth_send(struct netif *netif, struct pbuf *p)
         copied += curr->len;
     }
 
+    // WMB
+    //THREAD_MEMORY_RELEASE();
+
+    int err = seL4_ARM_VSpace_Clean_Data(3, (uintptr_t)frame, (uintptr_t)frame + copied);
+    if (err) {
+        print("ARM Vspace clean failed\n");
+        print(err);
+    }
+
     /* insert into the used tx queue */
     int error = enqueue_used(&state->tx_ring, (uintptr_t)frame, copied, buffer);
     if (error) {
@@ -229,13 +237,14 @@ static err_t lwip_eth_send(struct netif *netif, struct pbuf *p)
     }
 
     /* Notify the server */
-    sel4cp_notify(TX_CH);
+    //sel4cp_notify(TX_CH);
+    sel4cp_ppcall(TX_CH, sel4cp_msginfo_new(0, 0));
 
     return ret;
 }
 
 void process_rx_queue(void) 
-{   
+{
     while(!ring_empty(state.rx_ring.used_ring)) {
         uintptr_t addr;
         unsigned int len;
@@ -243,11 +252,26 @@ void process_rx_queue(void)
 
         dequeue_used(&state.rx_ring, &addr, &len, (void **)&buffer);
 
+        if (addr != buffer->buffer) {
+            print("sanity check failed\n");
+        }
+
+        /* Invalidate the memory */
+        // Addr is a virtual address.
+        int err = seL4_ARM_VSpace_Invalidate_Data(3, buffer->buffer, buffer->buffer + BUF_SIZE);
+        if (err) {
+            print("ARM Vspace invalidate failed\n");
+            print(err);
+        }
+
+        // read memory barrier. 
+        //THREAD_MEMORY_ACQUIRE();
+
         struct pbuf *p = create_interface_buffer(&state, (void *)buffer, len);
 
         if (state.netif.input(p, &state.netif) != ERR_OK) {
             // If it is successfully received, the receiver controls whether or not it gets freed.
-            sel4cp_dbg_puts("netif.input() != ERR_OK");
+            print("netif.input() != ERR_OK");
             pbuf_free(p);
         }
     }
@@ -401,5 +425,4 @@ void notified(sel4cp_channel ch)
             sel4cp_dbg_puts("lwip: received notification on unexpected channel\n");
             break;
     }
-    //sys_check_timeouts();
 }

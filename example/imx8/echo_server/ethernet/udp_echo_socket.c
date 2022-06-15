@@ -30,10 +30,6 @@ int setup_udp_socket(void)
         return -1;
     }
 
-    /*ip_addr_t ipaddr;
-    ip4addr_aton("172.16.1.120", &ipaddr);
-    int error = udp_bind(udp_socket, &ipaddr, UDP_ECHO_PORT);*/
-
     int error = udp_bind(udp_socket, IP_ANY_TYPE, UDP_ECHO_PORT);
     if (error == ERR_OK) {
         udp_recv(udp_socket, lwip_udp_recv_callback, udp_socket);

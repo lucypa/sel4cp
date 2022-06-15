@@ -53,10 +53,9 @@ u32_t sys_now(void)
 
 void irq(sel4cp_channel ch)
 {
-    sel4cp_dbg_puts("We got an IRQ!");
+    //sel4cp_dbg_puts("We got an IRQ!");
     uint32_t sr = gpt[SR];
     gpt[SR] = sr;
-    sel4cp_irq_ack(ch);
 
     if (sr & (1 << 5)) {
         overflow_count++;
@@ -64,12 +63,13 @@ void irq(sel4cp_channel ch)
 
     if (sr & 1) {
         gpt[IR] &= ~1;
-        uint64_t abs_timeout = get_ticks() + 0x100000;
+        uint64_t abs_timeout = get_ticks() + (LWIP_TICK_MS * NS_IN_MS);
         gpt[OCR1] = abs_timeout;
         gpt[IR] |= 1;
         sys_check_timeouts();
     }
-
+    
+    sel4cp_irq_ack(ch);
 }
 
 void gpt_init(void)
@@ -89,7 +89,7 @@ void gpt_init(void)
     );
 
     // set a timer! 
-    uint64_t abs_timeout = get_ticks() + 0x100000;
+    uint64_t abs_timeout = get_ticks() + (LWIP_TICK_MS * NS_IN_MS);
     gpt[OCR1] = abs_timeout;
     gpt[IR] |= 1;
 

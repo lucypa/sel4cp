@@ -6,6 +6,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <sel4/sel4.h>
 
 //function attributes
 //functions that need to be inlined for speed

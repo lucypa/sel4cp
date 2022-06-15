@@ -4,6 +4,7 @@
  */
 
 #include <stdint.h>
+#include "util.h"
 
 typedef  uint8_t  u8_t;
 typedef uint16_t u16_t;
@@ -42,7 +43,6 @@ typedef uintptr_t mem_ptr_t;
 
 
 #define LWIP_CHKSUM_ALGORITHM 2
-#define LWIP_NOASSERT
 
 
 //#define PACK_STRUCT_FIELD(x) x __attribute__((packed))
@@ -64,12 +64,12 @@ typedef uintptr_t mem_ptr_t;
 /* Plaform specific diagnostic output */
 #define LWIP_PLATFORM_DIAG(x)           \
         do {                            \
-            sel4cp_dbg_puts("error");         \
+            print("lwIP error\n");         \
         } while(0)
 
 #define LWIP_PLATFORM_ASSERT(x)                                 \
         do {                                                    \
-            sel4cp_dbg_puts("Assertion failed ");               \
+            print("Assertion failed\n");               \
             while(1);                                           \
         } while(0)
 

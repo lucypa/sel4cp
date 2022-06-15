@@ -32,11 +32,14 @@ uintptr_t tx_used;
 uintptr_t uart_base;
 
 /* Make the minimum frame buffer 2k. This is a bit of a waste of memory, but ensure alignment */
-#define PACKET_BUFFER_SIZE (2 * 1024)
+#define PACKET_BUFFER_SIZE  2048
 #define MAX_PACKET_SIZE     1536
 
-#define RX_COUNT 128
-#define TX_COUNT 128
+#define RX_COUNT 256
+#define TX_COUNT 256
+
+_Static_assert((512 * 2) * PACKET_BUFFER_SIZE <= 0x200000, "Expect rx+tx buffers to fit in single 2MB page");
+_Static_assert(sizeof(ring_buffer_t) <= 0x200000, "Expect ring buffer ring to fit in single 2MB page");
 
 struct descriptor {
     uint16_t len;
@@ -105,7 +108,7 @@ getPhysAddr(uintptr_t virtual)
     uintptr_t phys;
 
     if (offset < 0) {
-        sel4cp_dbg_puts("getPhysAddr: offset < 0");
+        print("getPhysAddr: offset < 0");
         return 0;
     }
 
@@ -140,13 +143,11 @@ alloc_rx_buf(size_t buf_size, void **cookie)
 
     /* Try to grab a buffer from the available ring */
     if (driver_dequeue(rx_ring.avail_ring, &addr, &len, cookie)) {
-        sel4cp_dbg_puts("RX Available ring is empty\n");
+        print("RX Available ring is empty\n");
         return 0;
     }
 
-    /* Invalidate the memory */
-    // Addr is a virtual address.
-    seL4_ARM_VSpace_Invalidate_Data(3, addr, addr + buf_size);
+    uintptr_t phys = getPhysAddr(addr);
 
     return getPhysAddr(addr);
 }
@@ -210,6 +211,10 @@ handle_rx(volatile struct enet_regs *eth)
 
         buff_desc_t *desc = (buff_desc_t *)cookie;
 
+        if (desc->encoded_addr < shared_dma_vaddr || desc->encoded_addr > (shared_dma_vaddr + (PACKET_BUFFER_SIZE * 512))) {
+            print("rx encoded addr in cookie is not valid\n");
+        }
+
         enqueue_used(&rx_ring, desc->encoded_addr, d->len, desc->cookie);
     }
 
@@ -231,7 +236,7 @@ complete_tx(volatile struct enet_regs *eth)
             cnt = tx_lengths[head];
             if ((0 == cnt) || (cnt > TX_COUNT)) {
                 /* We are not supposed to read 0 here. */
-                sel4cp_dbg_puts("complete_tx with cnt=0 or max");
+                print("complete_tx with cnt=0 or max");
                 return;
             }
             cnt_org = cnt;
@@ -262,6 +267,7 @@ complete_tx(volatile struct enet_regs *eth)
             ring->remain += cnt_org;
             /* give the buffer back */
             buff_desc_t *desc = (buff_desc_t *)cookie;
+
             enqueue_avail(&tx_ring, desc->encoded_addr, desc->len, desc->cookie);
         }
     }
@@ -271,7 +277,7 @@ complete_tx(volatile struct enet_regs *eth)
      * of tx descriptors holding data can't exceed the space in the ring.
      */
     if (0 != cnt) {
-        sel4cp_dbg_puts("head reached tail, but cnt!= 0");
+        print("head reached tail, but cnt!= 0");
     }
 }
 
@@ -287,7 +293,7 @@ raw_tx(volatile struct enet_regs *eth, unsigned int num, uintptr_t *phys,
         complete_tx(eth);
         unsigned int rem = ring->remain;
         if (rem < num) {
-            sel4cp_dbg_puts("TX queue lacks space");
+            print("TX queue lacks space");
             return;
         }
     }
@@ -334,7 +340,6 @@ handle_tx(volatile struct enet_regs *eth)
     void *cookie = NULL;
 
     while (!driver_dequeue(tx_ring.used_ring, &buffer, &len, &cookie)) {
-        seL4_ARM_VSpace_Clean_Data(3, buffer, buffer + len);
         uintptr_t phys = getPhysAddr(buffer);
         raw_tx(eth, 1, &phys, &len, cookie);
     }
@@ -356,7 +361,7 @@ handle_eth(volatile struct enet_regs *eth)
             fill_rx_bufs(eth);
         }
         if (e & NETIRQ_EBERR) {
-            sel4cp_dbg_puts("Error: System bus/uDMA");
+            print("Error: System bus/uDMA");
             while (1);
         }
         e = eth->eir & IRQ_MASK;
@@ -484,6 +489,9 @@ protected(sel4cp_channel ch, sel4cp_msginfo msginfo)
             sel4cp_mr_set(0, eth->palr);
             sel4cp_mr_set(1, eth->paur);
             return sel4cp_msginfo_new(0, 2);
+        case TX_CH:
+            handle_tx(eth);
+            break;
         default:
             sel4cp_dbg_puts("Received ppc on unexpected channel ");
             puthex64(ch);
@@ -500,9 +508,9 @@ void notified(sel4cp_channel ch)
             handle_eth(eth);
             sel4cp_irq_ack(ch);
             break;
-        case TX_CH:
+        /*case TX_CH:
             handle_tx(eth);
-            break;
+            break;*/
         case INIT:
             init_post();
             break;

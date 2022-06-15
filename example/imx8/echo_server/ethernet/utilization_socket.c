@@ -112,7 +112,7 @@ static inline void my_itoa(uint64_t n, char s[])
     my_reverse(s);
 }
 
-static char
+/*static char
 hexchar(unsigned int v)
 {
     return v < 10 ? '0' + v : ('a' - 10) + v;
@@ -142,7 +142,7 @@ puthex64(uint64_t x)
     buffer[17] = hexchar(x & 0xf);
     buffer[18] = 0;
     sel4cp_dbg_puts(buffer);
-}
+}*/
 
 static err_t utilization_sent_callback(void *arg, struct tcp_pcb *pcb, u16_t len)
 {
@@ -188,28 +188,17 @@ static err_t utilization_recv_callback(void *arg, struct tcp_pcb *pcb, struct pb
         total += ULONG_MAX * (bench->overflows - idle_overflow_start);
         idle = bench->ccount - idle_ccount_start;
 
-        puthex64(total);
-        sel4cp_dbg_puts("\n");
-        puthex64(idle);
-        sel4cp_dbg_puts("\n");
-
         char tbuf[16];
         my_itoa(total, tbuf);
-        sel4cp_dbg_puts(tbuf);
-        sel4cp_dbg_puts("\n");
 
         char ibuf[16];
         my_itoa(idle, ibuf);
-        sel4cp_dbg_puts(ibuf);
-        sel4cp_dbg_puts("\n");
 
         char buffer[100];
 
         int len = strlen(tbuf) + strlen(ibuf) + 2;
         char lbuf[16];
         my_itoa(len, lbuf);
-        sel4cp_dbg_puts(lbuf);
-        sel4cp_dbg_puts("\n");
 
         strcat(strcpy(buffer, "220 VALID DATA (Data to follow)\nContent-length: "), lbuf);
         strcat(buffer, "\n,");
@@ -217,7 +206,7 @@ static err_t utilization_recv_callback(void *arg, struct tcp_pcb *pcb, struct pb
         strcat(buffer, ",");
         strcat(buffer, tbuf);
 
-        sel4cp_dbg_puts(buffer);
+        // sel4cp_dbg_puts(buffer);
         error = tcp_write(pcb, buffer, strlen(buffer), TCP_WRITE_FLAG_COPY);
 
         tcp_shutdown(pcb, 0, 1);
