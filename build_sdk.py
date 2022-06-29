@@ -113,13 +113,18 @@ SUPPORTED_CONFIGS = (
         kernel_options = {
             "KernelDebugBuild": True,
             "KernelPrinting": True,
-            "KernelVerificationBuild": False
+            "KernelVerificationBuild": False,
+            "KernelBenchmarks": "track_utilisation"
         }
     ),
     ConfigInfo(
         name="release",
         debug=False,
         kernel_options = {
+            "KernelDebugBuild": False,
+            "KernelPrinting": False,
+            "KernelIRQReporting": False,
+            "KernelBenchmarks": "track_utilisation"
         },
     ),
 )

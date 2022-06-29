@@ -20,6 +20,9 @@
 #include "echo.h"
 #include "bench.h"
 
+#define START_PMU 3
+#define STOP_PMU 5
+
 /* This file implements a TCP based utilization measurment process that starts
  * and stops utilization measurements based on a client's requests.
  * The protocol used to communicate is as follows:
@@ -76,7 +79,7 @@ uintptr_t cyclecounters_vaddr;
 
 #define ULONG_MAX 0xffffffff
 
-struct bench *bench = (void *)(uintptr_t)0x5001000;
+struct bench *bench = (void *)(uintptr_t)0x5010000;
 
 uint64_t start;
 uint64_t idle_ccount_start;
@@ -175,13 +178,13 @@ static err_t utilization_recv_callback(void *arg, struct tcp_pcb *pcb, struct pb
             sel4cp_dbg_puts("Failed to send OK message through utilization peer");
         }
     } else if (msg_match(data_packet, START)) {
-        sel4cp_dbg_puts("measurement starting... \n");
+        print("measurement starting... \n");
         start = bench->ts;
         idle_ccount_start = bench->ccount;
         idle_overflow_start = bench->overflows;
-
+        sel4cp_notify(START_PMU);
     } else if (msg_match(data_packet, STOP)) {
-        sel4cp_dbg_puts("measurement finished \n");
+        print("measurement finished \n");
         uint64_t total, idle;
 
         total = bench->ts - start;
@@ -210,6 +213,8 @@ static err_t utilization_recv_callback(void *arg, struct tcp_pcb *pcb, struct pb
         error = tcp_write(pcb, buffer, strlen(buffer), TCP_WRITE_FLAG_COPY);
 
         tcp_shutdown(pcb, 0, 1);
+
+        sel4cp_notify(STOP_PMU);
     } else if (msg_match(data_packet, QUIT)) {
         /* Do nothing for now */
     } else {

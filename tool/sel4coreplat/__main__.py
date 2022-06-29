@@ -156,6 +156,7 @@ FAULT_EP_CAP_IDX = 2
 VSPACE_CAP_IDX = 3
 REPLY_CAP_IDX = 4
 TCB_CAP_IDX = 5
+MONITOR_CAP_IDX = 6
 BASE_OUTPUT_NOTIFICATION_CAP = 10
 BASE_OUTPUT_ENDPOINT_CAP = BASE_OUTPUT_NOTIFICATION_CAP + 64
 BASE_IRQ_CAP = BASE_OUTPUT_ENDPOINT_CAP + 64
@@ -1081,6 +1082,7 @@ def build_system(
     tcb_caps = [tcb_obj.cap_addr for tcb_obj in tcb_objects]
     schedcontext_names = [f"SchedContext: PD={pd.name}" for pd in system.protection_domains]
     schedcontext_objects = init_system.allocate_objects(SEL4_SCHEDCONTEXT_OBJECT, schedcontext_names, size=PD_SCHEDCONTEXT_SIZE)
+    schedcontext_caps = [sc.cap_addr for sc in schedcontext_objects]
     pp_protection_domains = [pd for pd in system.protection_domains if pd.pp]
     endpoint_names = ["EP: Monitor Fault"] + [f"EP: PD={pd.name}" for pd in pp_protection_domains]
     reply_names = ["Reply: Monitor"]+ [f"Reply: PD={pd.name}" for pd in system.protection_domains]
@@ -1093,6 +1095,7 @@ def build_system(
     pp_ep_endpoint_objects = dict(zip(pp_protection_domains, endpoint_objects[1:]))
     notification_names = [f"Notification: PD={pd.name}" for pd in system.protection_domains]
     notification_objects = init_system.allocate_objects(SEL4_NOTIFICATION_OBJECT, notification_names)
+    notification_caps = [ntfn.cap_addr for nftn in notification_objects]
     notification_objects_by_pd = dict(zip(system.protection_domains, notification_objects))
 
     # Determine number of upper directory / directory / page table objects required
@@ -1377,7 +1380,18 @@ def build_system(
                     SEL4_RIGHTS_ALL, # FIXME: Check rights
                     pd_b_badge)
             )
-
+    
+    # mint a cap between monitor and PDs. 
+    for idx, (cnode_obj, pd) in enumerate(zip(cnode_objects, system.protection_domains)):
+        system_invocations.appead(Sel4CnodeMint(
+                                    cnode_obj.cap_addr, 
+                                    MONITOR_CAP_IDX, 
+                                    PD_CAP_BITS, 
+                                    root_cnode_cap, 
+                                    fault_ep_endpoint_object.cap_addr, 
+                                    kernel_config.cap_address_bits,
+                                    SEL4_RIGHTS_ALL, 
+                                    idx)
 
     # All minting is complete at this point
 
@@ -1451,8 +1465,8 @@ def build_system(
     system_invocations.append(invocation)
 
     # map tcb cap into cspace
-    for tcb_obj, pd in zip(tcb_objects, system.protection_domains):
-        system_invocations.append(Sel4CnodeCopy(cnode_objects.cap_addr, TCB_CAP_IDX, PD_CAP_BITS, root_cnode_cap, tcb_obj.cap_addr, kernel_config.cap_address_bits, SEL4_RIGHTS_ALL))
+    for tcb_obj, cnode_obj in zip(tcb_objects, cnode_objects):
+        system_invocations.append(Sel4CnodeCopy(cnode_obj.cap_addr, TCB_CAP_IDX, PD_CAP_BITS, root_cnode_cap, tcb_obj.cap_addr, kernel_config.cap_address_bits, SEL4_RIGHTS_ALL))
 
     # set IPC buffer
     for tcb_obj, pd, ipc_buffer_obj in zip(tcb_objects, system.protection_domains, ipc_buffer_objects):
@@ -1469,6 +1483,7 @@ def build_system(
                 Sel4Aarch64Regs(pc=pd_elf_files[pd].entry)
             )
         )
+    
     # bind the notification object
     invocation = Sel4TcbBindNotification(tcb_objects[0].cap_addr, notification_objects[0].cap_addr)
     invocation.repeat(count=len(system.protection_domains), tcb=1, notification=1)
@@ -1691,6 +1706,8 @@ def main() -> int:
     monitor_elf.write_symbol("fault_ep", pack("<Q", built_system.fault_ep_cap_address))
     monitor_elf.write_symbol("reply", pack("<Q", built_system.reply_cap_address))
     monitor_elf.write_symbol("tcbs", pack("<Q" + "Q" * len(tcb_caps), 0, *tcb_caps))
+    #monitor_elf.write_symbol("scheds", pack("<Q" + "Q" * len(schedcontext_caps), 0, *schedcontext_caps))
+    #monitor_elf.write_symbol("ntfns", pack("<Q" + "Q" * len(notification_caps), 0, *notification_caps))
     names_array = bytearray([0] * (64 * 16))
     for idx, pd in enumerate(system_description.protection_domains, 1):
         nm = pd.name.encode("utf8")[:15]

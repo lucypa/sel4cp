@@ -41,7 +41,7 @@ LIBS := -lsel4cp -Tsel4cp.ld -lc
 IMAGE_FILE = $(BUILD_DIR)/loader.img
 REPORT_FILE = $(BUILD_DIR)/report.txt
 
-CFLAGS += -I$(LWIPDIR)/include -I.	\
+CFLAGS += -I$(LWIPDIR)/include \
 	-I$(BUILD_DIR)/include/arch	\
 	-I$(BUILD_DIR)/include	\
 	-I$(LWIPDIR)/include/ipv4

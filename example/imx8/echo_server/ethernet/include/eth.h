@@ -43,12 +43,18 @@
 #define RDAR_RDAR       (1UL << 24) /* RX descriptor active */
 #define TDAR_TDAR       (1UL << 24) /* TX descriptor active */
 
+#define TACC_IPCHK      (1UL << 3) /* If an IP frame is transmitted, the checksum is inserted automatically */
+#define TACC_PROCHK     (1UL << 4)
+
+#define STRFWD          (1UL << 8) /* Store forward must be enabled for checksums. */
+
+#define RACC_IPDIS      (1UL << 1) /* check the IP checksum and discard if wrong. */
+#define RACC_PRODIS     (1UL << 2) /* check protocol checksum and discard if wrong. */
 
 
 #define RCR_MAX_FL(x) (((x) & 0x3fff) << 16) /* Maximum Frame Length */
 
-/* Hardware registers... 
-TODO: This should go in another file */
+/* Hardware registers */
 struct mib_regs {
     /* NOTE: Counter not implemented because it is not applicable (read 0 always).*/
     uint32_t rmon_t_drop;        /* 00 Register Count of frames not counted correctly */

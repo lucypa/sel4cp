@@ -237,8 +237,8 @@ static err_t lwip_eth_send(struct netif *netif, struct pbuf *p)
     }
 
     /* Notify the server */
-    //sel4cp_notify(TX_CH);
-    sel4cp_ppcall(TX_CH, sel4cp_msginfo_new(0, 0));
+    sel4cp_notify(TX_CH);
+    //sel4cp_ppcall(TX_CH, sel4cp_msginfo_new(0, 0));
 
     return ret;
 }

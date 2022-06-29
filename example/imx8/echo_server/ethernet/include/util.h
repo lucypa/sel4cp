@@ -1,12 +1,12 @@
 #pragma once
 
-#include "sel4bench.h"
-
 #define UART_REG(x) ((volatile uint32_t *)(UART_BASE + (x)))
 #define UART_BASE 0x5000000 //0x30890000 in hardware. 
 #define STAT 0x98
 #define TRANSMIT 0x40
 #define STAT_TDRE (1 << 14)
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 static void
 putC(uint8_t ch)
@@ -42,12 +42,4 @@ puthex64(uint64_t val)
         val >>= 4;
     }
     print(buffer);
-}
-
-static void
-printtimestamp(void)
-{
-    ccnt_t count = sel4bench_get_cycle_count();
-    puthex64(count);
-    return;
 }

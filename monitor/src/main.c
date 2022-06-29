@@ -90,6 +90,8 @@ static char pd_names[MAX_PDS][MAX_NAME_LEN];
 seL4_Word fault_ep;
 seL4_Word reply;
 seL4_Word tcbs[MAX_TCBS];
+seL4_Word scheds[MAX_TCBS];
+seL4_Word ntfns[MAX_TCBS];
 
 struct region {
     uintptr_t paddr;
@@ -575,6 +577,15 @@ main(seL4_BootInfo *bi)
     }
 
     puts("MON|INFO: completed system invocations\n");
+
+
+    // wait for passive server to message us.
+    seL4_Word badge;
+    seL4_Recv(fault_ep, &badge, reply);
+
+    puthex32(badge);
+    puts(" ");
+    puts(pd_names[badge]);
 
     monitor();
 }

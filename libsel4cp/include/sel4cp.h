@@ -19,6 +19,8 @@ typedef seL4_MessageInfo_t sel4cp_msginfo;
 #define BASE_OUTPUT_NOTIFICATION_CAP 10
 #define BASE_ENDPOINT_CAP 74
 #define BASE_IRQ_CAP 138
+#define TCB_CAP_IDX 5
+#define MONITOR_EP 6
 
 #define SEL4CP_MAX_CHANNELS 63
 
@@ -84,17 +86,18 @@ sel4cp_mr_get(uint8_t mr)
 static void
 sel4cp_benchmark_start(void)
 {
-    seL4_BenchmarkResetAllThreadsUtilisation();
+    seL4_BenchmarkResetThreadUtilisation(TCB_CAP_IDX);
     seL4_BenchmarkResetLog(); 
 }
 
 static void
-sel4cp_benchmark_stop(uint64_t *total, uint64_t *idle, seL4_Word tcb_cptr)
+sel4cp_benchmark_stop(uint64_t *total, uint64_t *kernel, uint64_t *entries)
 {
     seL4_BenchmarkFinalizeLog();
-    seL4_BenchmarkGetThreadUtilisation(tcb_cptr);
+    seL4_BenchmarkGetThreadUtilisation(TCB_CAP_IDX);
     uint64_t *buffer = (uint64_t *)&seL4_GetIPCBuffer()->msg[0];
 
     *total = buffer[BENCHMARK_TOTAL_UTILISATION];
-    *idle = buffer[BENCHMARK_IDLE_LOCALCPU_UTILISATION];   
+    *kernel = buffer[BENCHMARK_TOTAL_KERNEL_UTILISATION];
+    *entries = buffer[BENCHMARK_TOTAL_NUMBER_KERNEL_ENTRIES];
 }

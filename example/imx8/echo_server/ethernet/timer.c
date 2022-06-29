@@ -43,7 +43,7 @@ u32_t sys_now(void)
 {
     if (!timers_initialised) {
         /* lwip_init() will call this when initialising its own timers,
-         * but the timer RPC is not set up at this point so just return 0 */
+         * but the timer is not set up at this point so just return 0 */
         return 0;
     } else {
         uint64_t time_now = get_ticks();

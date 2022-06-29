@@ -333,19 +333,6 @@ raw_tx(volatile struct enet_regs *eth, unsigned int num, uintptr_t *phys,
 }
 
 static void 
-handle_tx(volatile struct enet_regs *eth)
-{
-    uintptr_t buffer = 0;
-    unsigned int len = 0;
-    void *cookie = NULL;
-
-    while (!driver_dequeue(tx_ring.used_ring, &buffer, &len, &cookie)) {
-        uintptr_t phys = getPhysAddr(buffer);
-        raw_tx(eth, 1, &phys, &len, cookie);
-    }
-}
-
-static void 
 handle_eth(volatile struct enet_regs *eth)
 {
     uint32_t e = eth->eir & IRQ_MASK;
@@ -365,8 +352,20 @@ handle_eth(volatile struct enet_regs *eth)
             while (1);
         }
         e = eth->eir & IRQ_MASK;
-        /* write to clear events */
         eth->eir = e;
+    }
+}
+
+static void 
+handle_tx(volatile struct enet_regs *eth)
+{
+    uintptr_t buffer = 0;
+    unsigned int len = 0;
+    void *cookie = NULL;
+
+    while (!driver_dequeue(tx_ring.used_ring, &buffer, &len, &cookie)) {
+        uintptr_t phys = getPhysAddr(buffer);
+        raw_tx(eth, 1, &phys, &len, cookie);
     }
 }
 
@@ -432,8 +431,14 @@ eth_setup(void)
     eth->tipg = TIPG;
     /* Transmit FIFO Watermark register - store and forward */
     eth->tfwr = 0;
-    /* Do not forward frames with errors */
-    eth->racc = RACC_LINEDIS;
+
+    /* enable store and forward. This must be done for hardware csums*/
+    eth->rsfl = 0;
+    /* Do not forward frames with errors + check the csum */
+    eth->racc = RACC_LINEDIS | RACC_IPDIS | RACC_PRODIS;
+
+    /* enable hardware checksums */
+    // eth->tacc = TX_IPCHK | TX_PROCHK;
 
     /* Set RDSR */
     eth->rdsr = hw_ring_buffer_paddr;
@@ -468,6 +473,9 @@ void init_post()
     sel4cp_dbg_puts(sel4cp_name);
     sel4cp_dbg_puts(": init complete -- waiting for interrupt\n");
     sel4cp_notify(INIT);
+
+    /* Now take away our scheduling context */
+    seL4_Signal(MONITOR_EP);
 }
 
 void init(void)
@@ -508,11 +516,11 @@ void notified(sel4cp_channel ch)
             handle_eth(eth);
             sel4cp_irq_ack(ch);
             break;
-        /*case TX_CH:
-            handle_tx(eth);
-            break;*/
         case INIT:
             init_post();
+            break;
+        case TX_CH:
+            handle_tx(eth);
             break;
         default:
             sel4cp_dbg_puts("eth driver: received notification on unexpected channel\n");
