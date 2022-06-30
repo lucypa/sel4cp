@@ -10,7 +10,7 @@ from subprocess import run
 from sys import executable
 
 CWD = Path.cwd()
-BUILD_DIR = CWD / "tmp_build"
+BUILD_DIR = CWD / "example/imx8mm/echo_server/ethernet"
 
 sel4cp_config = "debug"
 
@@ -80,6 +80,8 @@ def main():
     make_env["SEL4CP_BOARD"] = args.board
     make_env["SEL4CP_CONFIG"] = sel4cp_config
     make_env["SEL4CP_SDK"] = str(release)
+
+    print(str(BUILD_DIR.absolute()))
 
     # Choose the makefile based on the `--example-from-sdk` command line flag
     makefile_directory = (

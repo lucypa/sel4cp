@@ -603,6 +603,8 @@ class BuiltSystem:
     reply_cap_address: int
     cap_lookup: Dict[int, str]
     tcb_caps: List[int]
+    sched_caps: List[int]
+    ntfn_caps: List[int]
     regions: List[Region]
     kernel_objects: List[KernelObject]
     initial_task_virt_region: MemoryRegion
@@ -1095,7 +1097,7 @@ def build_system(
     pp_ep_endpoint_objects = dict(zip(pp_protection_domains, endpoint_objects[1:]))
     notification_names = [f"Notification: PD={pd.name}" for pd in system.protection_domains]
     notification_objects = init_system.allocate_objects(SEL4_NOTIFICATION_OBJECT, notification_names)
-    notification_caps = [ntfn.cap_addr for nftn in notification_objects]
+    notification_caps = [ntfn.cap_addr for ntfn in notification_objects]
     notification_objects_by_pd = dict(zip(system.protection_domains, notification_objects))
 
     # Determine number of upper directory / directory / page table objects required
@@ -1383,7 +1385,7 @@ def build_system(
     
     # mint a cap between monitor and PDs. 
     for idx, (cnode_obj, pd) in enumerate(zip(cnode_objects, system.protection_domains)):
-        system_invocations.appead(Sel4CnodeMint(
+        system_invocations.append(Sel4CnodeMint(
                                     cnode_obj.cap_addr, 
                                     MONITOR_CAP_IDX, 
                                     PD_CAP_BITS, 
@@ -1391,7 +1393,7 @@ def build_system(
                                     fault_ep_endpoint_object.cap_addr, 
                                     kernel_config.cap_address_bits,
                                     SEL4_RIGHTS_ALL, 
-                                    idx)
+                                    idx))
 
     # All minting is complete at this point
 
@@ -1535,6 +1537,8 @@ def build_system(
         reply_cap_address = reply_object.cap_addr,
         cap_lookup = cap_address_names,
         tcb_caps = tcb_caps,
+        sched_caps = sched_caps,
+        ntfn_caps = ntfn_caps,
         regions = regions,
         kernel_objects = init_system._objects,
         initial_task_phys_region = initial_task_phys_region,
@@ -1703,11 +1707,13 @@ def main() -> int:
     regions += [(r.addr, r.data) for r in built_system.regions]
 
     tcb_caps = built_system.tcb_caps
+    sched_caps = built_system.sched_caps
+    ntfn_caps = built_system.ntfn_caps
     monitor_elf.write_symbol("fault_ep", pack("<Q", built_system.fault_ep_cap_address))
     monitor_elf.write_symbol("reply", pack("<Q", built_system.reply_cap_address))
     monitor_elf.write_symbol("tcbs", pack("<Q" + "Q" * len(tcb_caps), 0, *tcb_caps))
-    #monitor_elf.write_symbol("scheds", pack("<Q" + "Q" * len(schedcontext_caps), 0, *schedcontext_caps))
-    #monitor_elf.write_symbol("ntfns", pack("<Q" + "Q" * len(notification_caps), 0, *notification_caps))
+    monitor_elf.write_symbol("scheds", pack("<Q" + "Q" * len(schedcontext_caps), 0, *schedcontext_caps))
+    monitor_elf.write_symbol("ntfns", pack("<Q" + "Q" * len(notification_caps), 0, *notification_caps))
     names_array = bytearray([0] * (64 * 16))
     for idx, pd in enumerate(system_description.protection_domains, 1):
         nm = pd.name.encode("utf8")[:15]
