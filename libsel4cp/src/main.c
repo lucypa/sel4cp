@@ -20,6 +20,11 @@
 char _stack[4096]  __attribute__((__aligned__(16)));
 
 char sel4cp_name[16];
+bool have_reply = false;
+bool have_signal = false;
+seL4_CPtr signal;
+seL4_MessageInfo_t msg;
+seL4_MessageInfo_t reply_tag;
 
 extern seL4_IPCBuffer __sel4_ipc_buffer_obj;
 
@@ -45,27 +50,26 @@ run_init_funcs(void)
 static void
 handler_loop(void)
 {
-    bool have_reply = false;
-    seL4_MessageInfo_t reply_tag;
-
     for (;;) {
         seL4_Word badge;
         seL4_MessageInfo_t tag;
 
         if (have_reply) {
             tag = seL4_ReplyRecv(INPUT_CAP, reply_tag, &badge, REPLY_CAP);
+        } else if (have_signal) {
+            tag = seL4_NBSendRecv(signal, msg, INPUT_CAP, &badge, REPLY_CAP);
         } else {
             tag = seL4_Recv(INPUT_CAP, &badge, REPLY_CAP);
         }
 
         uint64_t is_endpoint = badge >> 63;
-
         if (is_endpoint) {
             have_reply = true;
             reply_tag = protected(badge & 0x3f, tag);
         } else {
-            unsigned int idx = 0;
             have_reply = false;
+            have_signal = false; 
+            unsigned int idx = 0;
             do  {
                 if (badge & 1) {
                     notified(idx);

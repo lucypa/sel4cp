@@ -44,7 +44,22 @@ class ConfigInfo:
     debug: bool
     kernel_options: KERNEL_CONFIG_TYPE
 
-    '''BoardInfo(
+SUPPORTED_BOARDS = (
+    BoardInfo(
+        name="imx8mm",
+        gcc_cpu="cortex-a53",
+        loader_link_address=0x41000000,
+        kernel_options = {
+            "KernelPlatform": "imx8mm-evk",
+            "KernelIsMCS": True,
+            "KernelArmExportPCNTUser": True,
+            "KernelArmExportPMUUser": True
+        },
+        examples = {
+            "eth": Path("example/imx8/echo_server/ethernet")
+        }
+    ),
+    BoardInfo(
         name="tqma8xqp1gb",
         gcc_cpu="cortex-a35",
         loader_link_address=0x80280000,
@@ -52,8 +67,6 @@ class ConfigInfo:
             "KernelPlatform": "tqma8xqp1gb",
             "KernelIsMCS": True,
             "KernelArmExportPCNTUser": True,
-            "KernelArmExportPMUUser": True,
-            "KernelBenchmarks": "track_utilisation",
         },
         examples = {
             "ethernet": Path("example/tqma8xqp1gb/ethernet")
@@ -68,40 +81,9 @@ class ConfigInfo:
             "KernelARMPlatform": "zcu102",
             "KernelIsMCS": True,
             "KernelArmExportPCNTUser": True,
-            "KernelArmExportPMUUser": True,
-            "KernelBenchmarks": "track_utilisation",
         },
         examples = {
             "hello": Path("example/zcu102/hello")
-        }
-    ),'''
-SUPPORTED_BOARDS = (
-    BoardInfo(
-        name="imx8mq",
-        gcc_cpu="cortex-a53",
-        loader_link_address=0x41000000,
-        kernel_options = {
-            "KernelPlatform": "imx8mq-evk",
-            "KernelIsMCS": True,
-            "KernelArmExportPCNTUser": True,
-            "KernelArmExportPMUUser": True
-        },
-        examples = {
-            "eth": Path("example/imx8/echo_server/ethernet")
-        }
-    ),
-    BoardInfo(
-        name="imx8mm",
-        gcc_cpu="cortex-a53",
-        loader_link_address=0x41000000,
-        kernel_options = {
-            "KernelPlatform": "imx8mm-evk",
-            "KernelIsMCS": True,
-            "KernelArmExportPCNTUser": True,
-            "KernelArmExportPMUUser": True
-        },
-        examples = {
-            "eth": Path("example/imx8/echo_server/ethernet")
         }
     ),
 )
@@ -123,6 +105,7 @@ SUPPORTED_CONFIGS = (
         kernel_options = {
             "KernelDebugBuild": False,
             "KernelPrinting": False,
+            "KernelSignalFastpath": True,
             "KernelIRQReporting": False,
             "KernelBenchmarks": "track_utilisation"
         },
