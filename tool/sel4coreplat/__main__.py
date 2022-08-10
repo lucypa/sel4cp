@@ -157,6 +157,7 @@ VSPACE_CAP_IDX = 3
 REPLY_CAP_IDX = 4
 TCB_CAP_IDX = 5
 MONITOR_CAP_IDX = 6
+LOG_BUFFER = 7
 BASE_OUTPUT_NOTIFICATION_CAP = 10
 BASE_OUTPUT_ENDPOINT_CAP = BASE_OUTPUT_NOTIFICATION_CAP + 64
 BASE_IRQ_CAP = BASE_OUTPUT_ENDPOINT_CAP + 64
@@ -1084,7 +1085,7 @@ def build_system(
     tcb_caps = [tcb_obj.cap_addr for tcb_obj in tcb_objects]
     schedcontext_names = [f"SchedContext: PD={pd.name}" for pd in system.protection_domains]
     schedcontext_objects = init_system.allocate_objects(SEL4_SCHEDCONTEXT_OBJECT, schedcontext_names, size=PD_SCHEDCONTEXT_SIZE)
-    schedcontext_caps = [sc.cap_addr for sc in schedcontext_objects]
+    sched_caps = [sc.cap_addr for sc in schedcontext_objects]
     pp_protection_domains = [pd for pd in system.protection_domains if pd.pp]
     endpoint_names = ["EP: Monitor Fault"] + [f"EP: PD={pd.name}" for pd in pp_protection_domains]
     reply_names = ["Reply: Monitor"]+ [f"Reply: PD={pd.name}" for pd in system.protection_domains]
@@ -1097,7 +1098,7 @@ def build_system(
     pp_ep_endpoint_objects = dict(zip(pp_protection_domains, endpoint_objects[1:]))
     notification_names = [f"Notification: PD={pd.name}" for pd in system.protection_domains]
     notification_objects = init_system.allocate_objects(SEL4_NOTIFICATION_OBJECT, notification_names)
-    notification_caps = [ntfn.cap_addr for ntfn in notification_objects]
+    ntfn_caps = [ntfn.cap_addr for ntfn in notification_objects]
     notification_objects_by_pd = dict(zip(system.protection_domains, notification_objects))
 
     # Determine number of upper directory / directory / page table objects required
@@ -1383,8 +1384,8 @@ def build_system(
                     pd_b_badge)
             )
     
-    # mint a cap between monitor and PDs. 
-    for idx, (cnode_obj, pd) in enumerate(zip(cnode_objects, system.protection_domains)):
+    # mint a cap between monitor EP and PDs. 
+    for idx, (cnode_obj, pd) in enumerate(zip(cnode_objects, system.protection_domains), 1):
         system_invocations.append(Sel4CnodeMint(
                                     cnode_obj.cap_addr, 
                                     MONITOR_CAP_IDX, 
@@ -1394,6 +1395,13 @@ def build_system(
                                     kernel_config.cap_address_bits,
                                     SEL4_RIGHTS_ALL, 
                                     idx))
+
+    # THIS IS A MASSIVE HACK TO JUST GET THE KERNEL LOG BUFFER TO WORK FOR DEV PURPOSES:
+    # This assumes the PD is called bench, and the memory region is called log_buffer. (For a user level kernel log buffer)
+    pd = system.pd_by_name["bench"]
+    mr = all_mr_by_name["log_buffer"] # change this to whatever the name is? 
+    print(mr_pages[mr][0].cap_addr)
+    system_invocations.append(Sel4CnodeCopy(cnode_objects_by_pd[pd].cap_addr, LOG_BUFFER, PD_CAP_BITS, root_cnode_cap, mr_pages[mr][0].cap_addr, kernel_config.cap_address_bits, SEL4_RIGHTS_ALL))
 
     # All minting is complete at this point
 
@@ -1712,8 +1720,8 @@ def main() -> int:
     monitor_elf.write_symbol("fault_ep", pack("<Q", built_system.fault_ep_cap_address))
     monitor_elf.write_symbol("reply", pack("<Q", built_system.reply_cap_address))
     monitor_elf.write_symbol("tcbs", pack("<Q" + "Q" * len(tcb_caps), 0, *tcb_caps))
-    monitor_elf.write_symbol("scheds", pack("<Q" + "Q" * len(schedcontext_caps), 0, *schedcontext_caps))
-    monitor_elf.write_symbol("ntfns", pack("<Q" + "Q" * len(notification_caps), 0, *notification_caps))
+    monitor_elf.write_symbol("scheds", pack("<Q" + "Q" * len(sched_caps), 0, *sched_caps))
+    monitor_elf.write_symbol("ntfns", pack("<Q" + "Q" * len(ntfn_caps), 0, *ntfn_caps))
     names_array = bytearray([0] * (64 * 16))
     for idx, pd in enumerate(system_description.protection_domains, 1):
         nm = pd.name.encode("utf8")[:15]

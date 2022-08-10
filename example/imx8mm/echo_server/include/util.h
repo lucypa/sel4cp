@@ -1,7 +1,12 @@
+/*
+ * Copyright 2022, UNSW
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #pragma once
 
 #define UART_REG(x) ((volatile uint32_t *)(UART_BASE + (x)))
-#define UART_BASE 0x5000000 //0x30890000 in hardware. 
+#define UART_BASE 0x5000000 //0x30890000 in hardware on imx8mm. 
 #define STAT 0x98
 #define TRANSMIT 0x40
 #define STAT_TDRE (1 << 14)

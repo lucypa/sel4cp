@@ -580,12 +580,20 @@ main(seL4_BootInfo *bi)
 
 
     // wait for passive server to message us.
-    seL4_Word badge;
+    /*seL4_Word badge;
     seL4_Recv(fault_ep, &badge, reply);
+
+    int err = seL4_SchedContext_UnbindObject(scheds[badge], tcbs[badge]);
+    puthex32(err);
+    puts("\n");
+    err = seL4_SchedContext_Bind(scheds[badge], ntfns[badge]);
+    puthex32(err);
+    puts("\n");
 
     puthex32(badge);
     puts(" ");
     puts(pd_names[badge]);
+    puts(" is now passive!\n");*/
 
     monitor();
 }

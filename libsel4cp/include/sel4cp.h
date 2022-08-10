@@ -3,10 +3,12 @@
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
+
 /* seL4 Core Platform interface */
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define __thread
@@ -28,6 +30,15 @@ typedef seL4_MessageInfo_t sel4cp_msginfo;
 void init(void);
 void notified(sel4cp_channel ch);
 sel4cp_msginfo protected(sel4cp_channel ch, sel4cp_msginfo msginfo);
+
+extern bool have_reply;
+extern seL4_MessageInfo_t reply_tag;
+
+/* These next three variables are so our PDs can combine a signal with the next Recv call. 
+  ... It's a little bit of a hack :P */
+extern bool have_signal;
+extern seL4_CPtr signal;
+extern seL4_MessageInfo_t msg;
 
 extern char sel4cp_name[16];
 
@@ -81,23 +92,4 @@ static uint64_t
 sel4cp_mr_get(uint8_t mr)
 {
     return seL4_GetMR(mr);
-}
-
-static void
-sel4cp_benchmark_start(void)
-{
-    seL4_BenchmarkResetThreadUtilisation(TCB_CAP_IDX);
-    seL4_BenchmarkResetLog(); 
-}
-
-static void
-sel4cp_benchmark_stop(uint64_t *total, uint64_t *kernel, uint64_t *entries)
-{
-    seL4_BenchmarkFinalizeLog();
-    seL4_BenchmarkGetThreadUtilisation(TCB_CAP_IDX);
-    uint64_t *buffer = (uint64_t *)&seL4_GetIPCBuffer()->msg[0];
-
-    *total = buffer[BENCHMARK_TOTAL_UTILISATION];
-    *kernel = buffer[BENCHMARK_TOTAL_KERNEL_UTILISATION];
-    *entries = buffer[BENCHMARK_TOTAL_NUMBER_KERNEL_ENTRIES];
 }

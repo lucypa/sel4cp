@@ -1,3 +1,8 @@
+/*
+ * Copyright 2022, UNSW
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
+
 #include <stdint.h>
 #include <sel4cp.h>
 #include <sel4/sel4.h>
