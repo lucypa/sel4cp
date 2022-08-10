@@ -17,9 +17,10 @@
 #include "timer.h"
 
 #define IRQ    1
-#define TX_CH  2
+#define TX_CH  6
 #define RX_CH  2
 #define INIT   4
+#define DRIVER 7
 
 #define LINK_SPEED 1000000000 // Gigabit
 #define ETHER_MTU 1500
@@ -31,7 +32,6 @@ uintptr_t rx_avail;
 uintptr_t rx_used;
 uintptr_t tx_avail;
 uintptr_t tx_used;
-uintptr_t copy_rx;
 uintptr_t shared_dma_vaddr;
 uintptr_t uart_base;
 
@@ -285,7 +285,7 @@ static void netif_status_callback(struct netif *netif)
 
 static void get_mac(void)
 {
-    sel4cp_ppcall(INIT, sel4cp_msginfo_new(0, 0));
+    sel4cp_ppcall(DRIVER, sel4cp_msginfo_new(0, 0));
     uint32_t palr = sel4cp_mr_get(0);
     uint32_t paur = sel4cp_mr_get(1);
     state.mac[0] = palr >> 24;
@@ -298,6 +298,8 @@ static void get_mac(void)
 
 void init_post(void)
 {   
+    print("Lwip init post");
+
     netif_set_status_callback(&(state.netif), netif_status_callback);
     netif_set_up(&(state.netif));
 
@@ -316,6 +318,7 @@ void init(void)
 {
     sel4cp_dbg_puts(sel4cp_name);
     sel4cp_dbg_puts(": elf PD init function running\n");
+    print("lwip init function running\n");
 
     /* Set up shared memory regions */
     ring_init(&state.rx_ring, (ring_buffer_t *)rx_avail, (ring_buffer_t *)rx_used, NULL, 1);
@@ -391,6 +394,7 @@ void notified(sel4cp_channel ch)
             return;
         default:
             sel4cp_dbg_puts("lwip: received notification on unexpected channel\n");
+            puthex64(ch);
             break;
     }
 }

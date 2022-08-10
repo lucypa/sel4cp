@@ -12,9 +12,10 @@
 #include "util.h"
 
 #define IRQ_CH 1
-#define TX_CH  2
+#define TX_CH  3
 #define RX_CH  2
 #define INIT   4
+#define LWIP   5
 
 #define MDC_FREQ    20000000UL
 
@@ -475,6 +476,7 @@ eth_setup(void)
 
 void init_post()
 {
+    print("eth init post");
     /* Set up shared memory regions */
     ring_init(&rx_ring, (ring_buffer_t *)rx_avail, (ring_buffer_t *)rx_used, NULL, 0);
     ring_init(&tx_ring, (ring_buffer_t *)tx_avail, (ring_buffer_t *)tx_used, NULL, 0);
@@ -495,6 +497,7 @@ void init(void)
 {
     sel4cp_dbg_puts(sel4cp_name);
     sel4cp_dbg_puts(": elf PD init function running\n");
+    print("Eth init running\n");
 
     eth_setup();
 
@@ -505,7 +508,7 @@ seL4_MessageInfo_t
 protected(sel4cp_channel ch, sel4cp_msginfo msginfo)
 {
     switch (ch) {
-        case INIT:
+        case LWIP:
             // return the MAC address. 
             sel4cp_mr_set(0, eth->palr);
             sel4cp_mr_set(1, eth->paur);
@@ -538,6 +541,7 @@ void notified(sel4cp_channel ch)
             break;
         default:
             sel4cp_dbg_puts("eth driver: received notification on unexpected channel\n");
+            puthex64(ch);
             break;
     }
 }

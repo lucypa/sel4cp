@@ -7,11 +7,17 @@
     <memory_region name="hw_ring_buffer" size="0x1_000" />
     <memory_region name="shared_dma" size="0x200_000" page_size="0x200_000" />
 
-    <!-- shared memory for ring buffer mechanism -->
-    <memory_region name="rx_avail" size="0x200_000" page_size="0x200_000"/>
-    <memory_region name="rx_used" size="0x200_000" page_size="0x200_000"/>
-    <memory_region name="tx_avail" size="0x200_000" page_size="0x200_000"/>
-    <memory_region name="tx_used" size="0x200_000" page_size="0x200_000"/>
+    <!-- shared memory for driver side ring buffer mechanism -->
+    <memory_region name="driver_rx_avail" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="driver_rx_used" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="driver_tx_avail" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="driver_tx_used" size="0x200_000" page_size="0x200_000"/>
+
+     <!-- shared memory for server side ring buffer mechanism -->
+    <memory_region name="server_rx_avail" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="server_rx_used" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="server_tx_avail" size="0x200_000" page_size="0x200_000"/>
+    <memory_region name="server_tx_used" size="0x200_000" page_size="0x200_000"/>
 
     <memory_region name="rx_cookies" size="0x200_000" page_size="0x200_000"/>
     <memory_region name="tx_cookies" size="0x200_000" page_size="0x200_000"/>
@@ -33,10 +39,10 @@
         <map mr="tx_cookies" vaddr="0x3_600_000" perms="rw" cached="true" setvar_vaddr="tx_cookies" />
 
         <!-- shared memory for ring buffer mechanism -->
-        <map mr="rx_avail" vaddr="0x4_000_000" perms="rw" cached="true" setvar_vaddr="rx_avail" />
-        <map mr="rx_used" vaddr="0x4_200_000" perms="rw" cached="true" setvar_vaddr="rx_used" />
-        <map mr="tx_avail" vaddr="0x4_400_000" perms="rw" cached="true" setvar_vaddr="tx_avail" />
-        <map mr="tx_used" vaddr="0x4_600_000" perms="rw" cached="true" setvar_vaddr="tx_used" />
+        <map mr="driver_rx_avail" vaddr="0x4_000_000" perms="rw" cached="true" setvar_vaddr="rx_avail" />
+        <map mr="driver_rx_used" vaddr="0x4_200_000" perms="rw" cached="true" setvar_vaddr="rx_used" />
+        <map mr="driver_tx_avail" vaddr="0x4_400_000" perms="rw" cached="true" setvar_vaddr="tx_avail" />
+        <map mr="driver_tx_used" vaddr="0x4_600_000" perms="rw" cached="true" setvar_vaddr="tx_used" />
 
         <map mr="shared_dma" vaddr="0x2_400_000" perms="rw" cached="true" setvar_vaddr="shared_dma_vaddr" />
 
@@ -49,6 +55,23 @@
         <setvar symbol="shared_dma_paddr" region_paddr="shared_dma" />
     </protection_domain>
 
+    <protection_domain name="multiplexer" priority="100" budget="20000">
+        <program_image path="multiplexer.elf"/>
+
+        <map mr="driver_rx_avail" vaddr="0x3_000_000" perms="rw" cached="true" setvar_vaddr="driver_rx_avail" />
+        <map mr="driver_rx_used" vaddr="0x3_200_000" perms="rw" cached="true" setvar_vaddr="driver_rx_used" />
+        <map mr="driver_tx_avail" vaddr="0x3_400_000" perms="rw" cached="true" setvar_vaddr="driver_tx_avail" />
+        <map mr="driver_tx_used" vaddr="0x3_600_000" perms="rw" cached="true" setvar_vaddr="driver_tx_used" />
+
+        <map mr="server_rx_avail" vaddr="0x4_000_000" perms="rw" cached="true" setvar_vaddr="server_rx_avail" />
+        <map mr="server_rx_used" vaddr="0x4_200_000" perms="rw" cached="true" setvar_vaddr="server_rx_used" />
+        <map mr="server_tx_avail" vaddr="0x4_400_000" perms="rw" cached="true" setvar_vaddr="server_tx_avail" />
+        <map mr="server_tx_used" vaddr="0x4_600_000" perms="rw" cached="true" setvar_vaddr="server_tx_used" />
+
+        <map mr="shared_dma" vaddr="0x2_400_000" perms="rw" cached="true" setvar_vaddr="shared_dma_vaddr" />
+        <map mr="uart" vaddr="0x5_000_000" perms="rw" cached="false" setvar_vaddr="uart_base" />
+    </protection_domain>
+
     <protection_domain name="lwip" priority="100" budget="20000">
         <program_image path="lwip.elf" />
 
@@ -56,10 +79,10 @@
         <map mr="uart" vaddr="0x5_000_000" perms="rw" cached="false" setvar_vaddr="uart_base" />
 
         <!-- shared memory for ring buffer mechanism -->
-        <map mr="rx_avail" vaddr="0x4_000_000" perms="rw" cached="true" setvar_vaddr="rx_avail" />
-        <map mr="rx_used" vaddr="0x4_200_000" perms="rw" cached="true" setvar_vaddr="rx_used" />
-        <map mr="tx_avail" vaddr="0x4_400_000" perms="rw" cached="true" setvar_vaddr="tx_avail" />
-        <map mr="tx_used" vaddr="0x4_600_000" perms="rw" cached="true" setvar_vaddr="tx_used" />
+        <map mr="server_rx_avail" vaddr="0x4_000_000" perms="rw" cached="true" setvar_vaddr="rx_avail" />
+        <map mr="server_rx_used" vaddr="0x4_200_000" perms="rw" cached="true" setvar_vaddr="rx_used" />
+        <map mr="server_tx_avail" vaddr="0x4_400_000" perms="rw" cached="true" setvar_vaddr="tx_avail" />
+        <map mr="server_tx_used" vaddr="0x4_600_000" perms="rw" cached="true" setvar_vaddr="tx_used" />
 
         <map mr="shared_dma" vaddr="0x2_400_000" perms="rw" cached="true" setvar_vaddr="shared_dma_vaddr" />
 
@@ -87,12 +110,37 @@
 
     <channel>
         <end pd="eth" id="2" />
+        <end pd="multiplexer" id="2" />
+    </channel>
+
+    <channel>
+        <end pd="multiplexer" id="3" />
         <end pd="lwip" id="2" />
     </channel>
 
     <channel>
-        <end pd="lwip" id="4" />
+        <end pd="lwip" id="6" />
+        <end pd="multiplexer" id="4" />
+    </channel>
+
+    <channel>
+        <end pd="multiplexer" id="5" />
+        <end pd="eth" id="3" />
+    </channel>
+
+    <channel>
+        <end pd="multiplexer" id="6" />
         <end pd="eth" id="4" />
+    </channel>
+
+    <channel>
+        <end pd="lwip" id="4" />
+        <end pd="multiplexer" id="1" />
+    </channel>
+
+    <channel>
+        <end pd="lwip" id="7" />
+        <end pd="eth" id="5" />
     </channel>
 
     <channel>
